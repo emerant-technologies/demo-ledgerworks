@@ -1,0 +1,76 @@
+/* Emerant Technologies byline + promo (brand kit: ink #111214, paper #F3F3EF, lime #C8F031) */
+@font-face {
+  font-family: "Wix Madefor Display";
+  src: url("assets/fonts/WixMadeforDisplay-Bold.woff") format("woff");
+  font-weight: 700;
+  font-display: swap;
+}
+
+.em-byline {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 12px 0 10px; margin-left: -2px;
+  border: 0; border-left: 1px solid rgba(17, 18, 20, .12);
+  border-radius: 0; background: transparent;
+  color: #111214; cursor: pointer; font: inherit; text-align: left;
+  pointer-events: auto;
+}
+.em-byline:hover .em-by-name { text-decoration: underline; text-decoration-color: #C8F031; text-decoration-thickness: 3px; text-underline-offset: 3px; }
+.em-byline:focus-visible { outline: 2px solid #2f6bff; outline-offset: 2px; border-radius: 8px; }
+.em-byline .em-mark { width: 18px; height: 18px; flex: none; }
+.em-by-text { display: flex; flex-direction: column; line-height: 1.05; }
+.em-by-kicker { font-size: 10px; font-weight: 500; color: #55595f; letter-spacing: .01em; }
+.em-by-name { font-family: "Wix Madefor Display", Inter, system-ui, sans-serif; font-weight: 700; font-size: 14px; letter-spacing: -.01em; }
+
+.em-byline-floating {
+  position: fixed; left: 16px; bottom: 16px; z-index: 40;
+  background: rgba(255, 255, 255, .9); border: 1px solid rgba(17, 18, 20, .1); border-radius: 12px;
+}
+
+@media (max-width: 1180px) {
+  .em-by-text { display: none; }
+  .em-byline { padding: 0 8px; }
+}
+
+/* promo card */
+.em-promo {
+  position: fixed; z-index: 9050;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 32px));
+  padding: 22px 22px 18px;
+  background: #111214; color: #F3F3EF;
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(17, 18, 20, .45), 0 2px 8px rgba(17, 18, 20, .2);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  pointer-events: auto;
+}
+.em-promo[hidden] { display: none; }
+.em-promo.em-in { animation: emIn .28s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes emIn { from { opacity: 0; transform: translate(-50%, -46%) scale(.97); } }
+
+.em-promo .em-x {
+  position: absolute; top: 10px; right: 10px;
+  width: 30px; height: 30px; border-radius: 8px; border: 0;
+  background: transparent; color: #a4a8ae; font-size: 22px; line-height: 1; cursor: pointer;
+}
+.em-promo .em-x:hover { background: #1a1b1e; color: #F3F3EF; }
+.em-kicker { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: #a4a8ae; margin-bottom: 12px; }
+.em-kicker .em-mark { width: 18px; height: 18px; }
+.em-title {
+  margin: 0 0 8px; font-family: "Wix Madefor Display", Inter, system-ui, sans-serif;
+  font-size: 22px; line-height: 1.2; font-weight: 700; letter-spacing: -.015em; color: #F3F3EF;
+}
+.em-text { margin: 0 0 18px; font-size: 14px; line-height: 1.55; color: #c9ccd1; }
+.em-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.em-cta {
+  display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 10px;
+  background: #C8F031; color: #111214; font-weight: 700; font-size: 14px; text-decoration: none;
+}
+.em-cta:hover { background: #d6f75a; }
+.em-later {
+  height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #2a2c30;
+  background: transparent; color: #F3F3EF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.em-later:hover { background: #1a1b1e; }
+.em-cta:focus-visible, .em-later:focus-visible, .em-promo .em-x:focus-visible { outline: 2px solid #C8F031; outline-offset: 2px; }
+.em-url { margin-top: 14px; font-size: 12px; color: #6b7079; }

@@ -1,0 +1,15 @@
+*
+!Dockerfile
+!nginx.conf
+!index.html
+!styles.css
+!demo.css
+!i18n.js
+!engine.js
+!world.js
+!ui.js
+!demo.js
+!brand.css
+!brand.js
+!assets
+!assets/**

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LedgerWorks</title>
+<meta name="description" content="LedgerWorks - an interactive 3D accounting practice world with a live operations dashboard. Built by Emerant Technologies.">
+<meta name="theme-color" content="#eef3ff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="demo.css">
+<link rel="stylesheet" href="brand.css">
+<!-- Umami analytics + heatmaps/session replays -->
+<script defer src="https://analytics.ktsparks.net/script.js" data-website-id="f68c96d4-550f-4d2f-840d-d36439573fde"></script>
+<script defer src="https://analytics.ktsparks.net/recorder.js" data-website-id="f68c96d4-550f-4d2f-840d-d36439573fde"></script>
+</head>
+<body class="loading">
+
+<!-- 3D world canvas is mounted here by LW.world.init -->
+<div id="world" aria-hidden="false"></div>
+
+<!-- Shown only when WebGL / world is unavailable -->
+<div id="fallback" hidden></div>
+
+<!-- Dashboard overlay: container ignores pointer events, panels opt back in -->
+<div id="ui">
+
+  <header class="topbar glass" role="banner">
+    <a class="brand" href="#" data-i18n-aria="app.home" aria-label="LedgerWorks">
+      <span class="logo" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/><path d="M9 10h6"/></svg>
+      </span>
+      <span class="brand-name">LedgerWorks</span>
+    </a>
+
+    <div class="search" id="search" role="search">
+      <i class="ic-slot search-ic" data-ic="search"></i>
+      <input id="searchInput" data-demo="search" type="text" placeholder="Search accounts, JEs, scenarios" data-i18n-ph="search.ph" autocomplete="off" spellcheck="false"
+             aria-label="Search accounts, journal entries and scenarios" data-i18n-aria="search.aria" role="combobox" aria-expanded="false" aria-controls="searchResults" aria-autocomplete="list">
+      <kbd aria-hidden="true">/</kbd>
+      <div class="search-results glass" id="searchResults" role="listbox" hidden></div>
+    </div>
+
+    <button class="company" id="companyPill" type="button" title="Switch company" data-i18n-title="co.switch">
+      <span class="co-mark" aria-hidden="true" data-i18n="co.mark">N</span>
+      <span class="co-name" data-i18n="co.name">Northwind Supply Co.</span>
+      <span class="sep">&middot;</span>
+      <span id="monthLabel">Oct 2026</span>
+      <span class="sep s2">&middot;</span>
+      <span class="co-close"><span data-i18n="co.close">Close</span> <b id="closeCount">0/6</b></span>
+      <i class="ic-slot" data-ic="chevronDown" data-size="14"></i>
+    </button>
+
+    <div class="spacer"></div>
+
+    <div class="live" id="livePill" aria-live="off">
+      <span class="live-dot" id="liveDot"></span>
+      <span id="liveLabel">Live</span>
+      <time id="clock">--:--:--</time>
+    </div>
+
+    <div class="seg" id="speedSeg" role="group" aria-label="Simulation speed" data-i18n-aria="speed.aria">
+      <button type="button" data-speed="pause" data-demo="speed-pause" aria-label="Pause simulation" data-i18n-aria="speed.pause" title="Pause" data-i18n-title="speed.pause"><i class="ic-slot" data-ic="pause" data-size="14"></i></button>
+      <button type="button" data-speed="1" data-demo="speed-1x" aria-pressed="true" title="Normal speed" data-i18n-title="speed.normal">1x</button>
+      <button type="button" data-speed="2" data-demo="speed-2x" aria-pressed="false" title="Double speed" data-i18n-title="speed.double">2x</button>
+    </div>
+
+    <div class="seg langseg" id="langSeg" role="group" aria-label="Language" data-i18n-aria="lang.aria">
+      <button type="button" data-lang="en" data-demo="lang-en" aria-pressed="true" title="English" lang="en">EN</button>
+      <button type="button" data-lang="bg" data-demo="lang-bg" aria-pressed="false" title="Български" lang="bg">BG</button>
+    </div>
+
+    <div class="xp" id="xpPill" data-demo="xp" title="Level and experience">
+      <span class="xp-star"><i class="ic-slot" data-ic="star" data-size="14"></i></span>
+      <span class="xp-main"><b id="lvl">Lv 1</b><span class="xp-bar"><i id="xpBar"></i></span></span>
+      <span class="xp-val"><span id="xpVal">0</span> <span data-i18n="xp.unit">XP</span></span>
+      <span class="streak" id="streak" hidden><i class="ic-slot" data-ic="zap" data-size="12"></i><b id="streakVal">0</b></span>
+      <span class="xp-float" id="xpFloat" aria-hidden="true"></span>
+    </div>
+
+    <div class="me">
+      <span class="avatar" aria-hidden="true" data-i18n="me.init">YO</span>
+      <span class="who"><b data-i18n="me.name">You</b><small id="roleLabel">Staff Accountant</small></span>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Key metrics" data-i18n-aria="kpi.aria"></section>
+
+  <div class="mapctl glass" id="mapctl" role="group" aria-label="Map controls" data-i18n-aria="map.aria">
+    <button type="button" data-act="zoomIn" data-demo="map-zoom-in" aria-label="Zoom in" title="Zoom in" data-i18n-aria="map.zoomIn" data-i18n-title="map.zoomIn"><i class="ic-slot" data-ic="plus"></i></button>
+    <button type="button" data-act="zoomOut" data-demo="map-zoom-out" aria-label="Zoom out" title="Zoom out" data-i18n-aria="map.zoomOut" data-i18n-title="map.zoomOut"><i class="ic-slot" data-ic="minus"></i></button>
+    <hr>
+    <button type="button" data-act="rotL" data-demo="map-rotate-left" aria-label="Rotate left" title="Rotate left" data-i18n-aria="map.rotL" data-i18n-title="map.rotL"><i class="ic-slot" data-ic="rotateL"></i></button>
+    <button type="button" data-act="rotR" data-demo="map-rotate-right" aria-label="Rotate right" title="Rotate right" data-i18n-aria="map.rotR" data-i18n-title="map.rotR"><i class="ic-slot" data-ic="rotateR"></i></button>
+    <hr>
+    <button type="button" data-act="home" data-demo="map-home" aria-label="Reset view" title="Reset view" data-i18n-aria="map.home" data-i18n-title="map.home"><i class="ic-slot" data-ic="home"></i></button>
+  </div>
+
+  <!-- Desktop: three free-floating panels. Mobile (<900px): one bottom sheet with tabs. -->
+  <div class="sheet" id="sheet" data-tab="tables">
+    <button type="button" class="sheet-handle" id="sheetHandle" aria-label="Expand or collapse panel" data-i18n-aria="sheet.handle"><span></span></button>
+    <nav class="sheet-tabs" role="tablist" aria-label="Panels" data-i18n-aria="sheet.aria">
+      <button type="button" role="tab" data-stab="inspect" data-i18n="sheet.inspect">Inspector</button>
+      <button type="button" role="tab" data-stab="team" data-i18n="sheet.team">Team</button>
+      <button type="button" role="tab" data-stab="tables" aria-selected="true" data-i18n="sheet.ledger">Ledger</button>
+      <button type="button" role="tab" data-stab="close" data-i18n="sheet.close">Close</button>
+    </nav>
+
+    <aside id="inspector" class="panel glass inspector" data-demo="inspector" aria-label="Building inspector" data-i18n-aria="insp.aria"></aside>
+
+    <section id="teamPanel" class="panel glass teampanel" data-demo="team-panel" aria-label="Finance team" data-i18n-aria="team.title">
+      <div class="team-head"><h3 data-i18n="team.title">Finance team</h3><span class="chip ok" id="teamCount"></span></div>
+      <div class="team-body">
+        <div class="team-list" id="teamList"></div>
+        <div class="team-feed-wrap">
+          <div class="label" data-i18n="team.feed">Activity</div>
+          <ul class="team-feed" id="teamFeed" data-demo="team-feed" aria-live="off"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="closePanel" class="panel glass closepanel" data-demo="close-tracker" aria-label="Month-end close" data-i18n-aria="close.title"></section>
+
+    <section id="tablePanel" class="panel glass tables" data-demo="table" aria-label="Ledger tables" data-i18n-aria="tbl.aria">
+      <div class="tabs" role="tablist" id="tblTabs">
+        <button type="button" role="tab" data-tab="journal" data-demo="tab-journal" aria-selected="true" data-i18n="tab.journal">Journal</button>
+        <button type="button" role="tab" data-tab="ar" data-demo="tab-ar" aria-selected="false" data-i18n="tab.ar">AR Aging</button>
+        <button type="button" role="tab" data-tab="ap" data-demo="tab-ap" aria-selected="false" data-i18n="tab.ap">AP Due</button>
+        <button type="button" role="tab" data-tab="tb" data-demo="tab-tb" aria-selected="false" data-i18n="tab.tb">Trial Balance</button>
+        <span class="tabs-meta" id="tabMeta"></span>
+      </div>
+      <div class="tbl-wrap" id="tblWrap" role="tabpanel" tabindex="0"></div>
+      <div class="tbl-foot" id="tblFoot"></div>
+    </section>
+  </div>
+
+</div>
+
+<div id="modalRoot"></div>
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="i18n.js"></script>
+<script src="engine.js"></script>
+<script src="world.js"></script>
+<script src="ui.js"></script>
+<script src="demo.js"></script>
+<script src="brand.js"></script>
+</body>
+</html>
