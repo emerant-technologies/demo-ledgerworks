@@ -7,6 +7,7 @@
   var SITE = 'https://emerant.net/';
   var UTM = '?utm_source=ledgerworks&utm_medium=demo&utm_campaign=built_by';
   var SEEN_KEY = 'lw-emerant-promo-seen';
+  var WELCOME_KEY = 'lw-welcome-seen';
 
   var TXT = {
     builtBy: { en: 'Built by', bg: 'Създадено от' },
@@ -22,6 +23,35 @@
     cta: { en: 'Talk to Emerant', bg: 'Свържете се с Emerant' },
     later: { en: 'Keep exploring', bg: 'Продължете да разглеждате' },
     close: { en: 'Close', bg: 'Затвори' },
+    wKicker: { en: 'Demo · Built by Emerant Technologies', bg: 'Демо · Създадено от Emerant Technologies' },
+    wTitle: { en: 'Welcome to LedgerWorks', bg: 'Добре дошли в LedgerWorks' },
+    wLead: {
+      en: 'A gamified finance & accounting dashboard, created for demo purposes.',
+      bg: 'Геймифицирано табло за финанси и счетоводство, създадено за демонстрационни цели.'
+    },
+    wB1t: { en: 'Learning', bg: 'Обучение' },
+    wB1: {
+      en: 'Practice real postings, month-end close and analysis, with points, levels and instant feedback.',
+      bg: 'Упражнявайте реални осчетоводявания, месечно приключване и анализ - с точки, нива и мигновена обратна връзка.'
+    },
+    wB2t: { en: 'Engagement', bg: 'Ангажираност' },
+    wB2: {
+      en: 'Turn the finance team\'s daily work into a real-world game that keeps people motivated.',
+      bg: 'Превърнете ежедневната работа на финансовия екип в реална игра, която мотивира хората.'
+    },
+    wB3t: { en: 'Visibility', bg: 'Видимост' },
+    wB3: {
+      en: 'Give management granular, live monitoring of every team member\'s activity and of the KPIs it moves.',
+      bg: 'Дайте на мениджмънта детайлен поглед в реално време върху дейността на всеки служител и показателите, които тя движи.'
+    },
+    wSell: {
+      en: 'Want something like this for your company? Emerant Technologies designs and builds tools like this one. Reach out to see more of our work.',
+      bg: 'Искате нещо подобно за вашата компания? Emerant Technologies проектира и разработва подобни решения. Свържете се с нас, за да видите още от работата ни.'
+    },
+    wNote: { en: 'Demo data: the company, people and figures are fictional.', bg: 'Демо данни: компанията, хората и цифрите са измислени.' },
+    wTour: { en: 'Start the 3-minute tour', bg: 'Започни 3-минутната обиколка' },
+    wExplore: { en: 'Explore on my own', bg: 'Разгледай сам' },
+    wSite: { en: 'See our work', bg: 'Вижте наши проекти' },
     bylineAria: { en: 'About Emerant Technologies, the team that built LedgerWorks', bg: 'За Emerant Technologies, екипът създал LedgerWorks' }
   };
 
@@ -38,6 +68,87 @@
   }
 
   var els = {};
+  var welcome = { open: false };
+
+  var ICONS = {
+    learn: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>',
+    spark: '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    eye: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
+  };
+  function ic(k) {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[k] + '</svg>';
+  }
+
+  function shouldWelcome() {
+    var p = null;
+    try { p = new URLSearchParams(location.search).get('demo'); } catch (e) { /* noop */ }
+    if (p === '0' || p === '1') return false;          // explicit tour links / restarts skip it
+    try { return sessionStorage.getItem(WELCOME_KEY) !== '1'; } catch (e2) { return true; }
+  }
+
+  function buildWelcome() {
+    var w = document.createElement('div');
+    w.className = 'em-welcome-wrap';
+    w.innerHTML =
+      '<section class="em-welcome" role="dialog" aria-modal="true" aria-labelledby="emWTitle">' +
+        '<div class="em-kicker">' + mark('#F3F3EF') + '<span data-w="wKicker"></span></div>' +
+        '<h1 id="emWTitle" class="em-title em-w-title" data-w="wTitle"></h1>' +
+        '<p class="em-w-lead" data-w="wLead"></p>' +
+        '<ul class="em-w-list">' +
+          '<li><span class="em-w-ic">' + ic('learn') + '</span><span><b data-w="wB1t"></b><span data-w="wB1"></span></span></li>' +
+          '<li><span class="em-w-ic">' + ic('spark') + '</span><span><b data-w="wB2t"></b><span data-w="wB2"></span></span></li>' +
+          '<li><span class="em-w-ic">' + ic('eye') + '</span><span><b data-w="wB3t"></b><span data-w="wB3"></span></span></li>' +
+        '</ul>' +
+        '<div class="em-w-sell">' +
+          '<p data-w="wSell"></p>' +
+          '<div class="em-w-contacts">' +
+            '<a href="mailto:hello@emerant.net?subject=LedgerWorks%20demo" data-umami-event="emerant-welcome-email">hello@emerant.net</a>' +
+            '<span aria-hidden="true">·</span>' +
+            '<a class="em-w-site" target="_blank" rel="noopener" data-umami-event="emerant-welcome-site"></a>' +
+          '</div>' +
+        '</div>' +
+        '<div class="em-actions em-w-actions">' +
+          '<button type="button" class="em-cta" data-wact="tour" data-umami-event="welcome-start-tour"></button>' +
+          '<button type="button" class="em-later" data-wact="explore" data-umami-event="welcome-explore"></button>' +
+        '</div>' +
+        '<p class="em-w-note" data-w="wNote"></p>' +
+      '</section>';
+    w.querySelector('.em-w-site').href = SITE + UTM.replace('built_by', 'welcome');
+    w.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-wact]') : null;
+      if (b) closeWelcome(b.getAttribute('data-wact'));
+    });
+    w.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); closeWelcome('tour'); }
+    });
+    document.body.appendChild(w);
+    els.welcome = w;
+    welcome.open = true;
+    setTimeout(function () { var b = w.querySelector('[data-wact="tour"]'); if (b) b.focus(); }, 50);
+  }
+
+  function renderWelcome() {
+    var w = els.welcome;
+    if (!w) return;
+    Array.prototype.forEach.call(w.querySelectorAll('[data-w]'), function (n) {
+      n.textContent = tx(TXT[n.getAttribute('data-w')]);
+    });
+    w.querySelector('[data-wact="tour"]').textContent = '\u25B6 ' + tx(TXT.wTour);
+    w.querySelector('[data-wact="explore"]').textContent = tx(TXT.wExplore);
+    w.querySelector('.em-w-site').textContent = 'emerant.net \u2014 ' + tx(TXT.wSite) + ' \u2192';
+  }
+
+  function closeWelcome(choice) {
+    if (!welcome.open) return;
+    welcome.open = false;
+    LW.brand.choice = choice === 'explore' ? 'explore' : 'tour';
+    try { sessionStorage.setItem(WELCOME_KEY, '1'); } catch (e) { /* noop */ }
+    if (els.welcome) {
+      els.welcome.classList.add('em-out');
+      var w = els.welcome;
+      setTimeout(function () { w.remove(); }, 220);
+    }
+  }
 
   function build() {
     // top bar byline
@@ -84,6 +195,7 @@
   }
 
   function render() {
+    renderWelcome();
     if (!els.by) return;
     els.by.querySelector('.em-by-kicker').textContent = tx(TXT.builtBy);
     els.by.setAttribute('aria-label', tx(TXT.bylineAria));
@@ -118,13 +230,14 @@
       var st;
       try { st = d.state(); } catch (e) { return; }
       var running = !!(st && st.running && !st.done);
-      if (wasRunning && !running && !seen()) setTimeout(show, 1200);
+      if (wasRunning && !running && !seen() && !welcome.open) setTimeout(show, 1200);
       wasRunning = running;
     }, 800);
   }
 
   function init() {
     try {
+      if (shouldWelcome()) buildWelcome();
       build();
       if (LW.i18n && typeof LW.i18n.on === 'function') LW.i18n.on(render);
       watchTour();
@@ -133,7 +246,10 @@
     }
   }
 
-  LW.brand = { show: show, hide: hide };
+  LW.brand = {
+    show: show, hide: hide, choice: null,
+    welcomeOpen: function () { return welcome.open; }
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

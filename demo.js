@@ -40,6 +40,11 @@
       'Екскурзията спира и продължавате сами. Можете да я пуснете отново от бутона „Екскурзия“.'),
     exitStay: L('Continue tour', 'Продължи екскурзията'),
     exitYes: L('Exit tour', 'Изход'),
+    pauseQ: L('Pause the guided tour?', 'Пауза на екскурзията?'),
+    pauseText: L('The tour freezes where it is and you can click around freely. Press Resume in the top bar to continue.',
+      'Екскурзията спира на текущото място и можете свободно да разглеждате. Натиснете „Продължи“ в горната лента, за да продължите.'),
+    pauseStay: L('Continue tour', 'Продължи екскурзията'),
+    pauseYes: L('Pause tour', 'Пауза'),
     done: L('Tour complete', 'Екскурзията приключи'),
     chip: L('Guided tour', 'Екскурзия'),
     pausedTitle: L('Paused', 'На пауза'),
@@ -195,7 +200,7 @@
       var btn = e.target.closest ? e.target.closest('button[data-act]') : null;
       if (!btn) return;
       var a = btn.getAttribute('data-act');
-      if (a === 'pause') { if (S.paused) resume(); else pause(false); }
+      if (a === 'pause') { if (S.paused) resume(); else confirmPause(); }
       else if (a === 'restart') restart();
       else if (a === 'exit') confirmExit();
     });
@@ -211,8 +216,8 @@
     document.addEventListener('pointerdown', function (e) {
       if (!S.running || S.paused || S.done || !e.isTrusted) return;
       var t = e.target;
-      if (t && t.closest && t.closest('#lw-demo-bar, #lw-demo-chip')) return;
-      pause(true);
+      if (t && t.closest && t.closest('#lw-demo-bar, #lw-demo-chip, #lw-demo-confirm, .em-welcome-wrap')) return;
+      confirmPause();
     }, true);
 
     renderBarText();
@@ -1079,10 +1084,8 @@
     var q = S.resumeQ; S.resumeQ = []; q.forEach(function (f) { f(); });
   }
 
-  function confirmExit() {
-    if (!S.running || S.done) { stop(); return; }
-    var wasPaused = S.paused;
-    if (!wasPaused) pause(true);
+  // Shared confirmation dialog. The tour is frozen while it is open.
+  function confirmBox(o) {
     var old = document.getElementById('lw-demo-confirm');
     if (old) old.remove();
     var d = document.createElement('div');
@@ -1095,28 +1098,49 @@
         '<div class="ldc-text"></div>' +
         '<div class="ldc-actions">' +
           '<button type="button" data-c="stay"></button>' +
-          '<button type="button" data-c="exit" class="ldc-danger"></button>' +
+          '<button type="button" data-c="go" class="ldc-danger"></button>' +
         '</div>' +
       '</div>';
-    d.querySelector('.ldc-title').textContent = tx(UI_TXT.exitQ);
-    d.querySelector('.ldc-text').textContent = tx(UI_TXT.exitText);
-    d.querySelector('[data-c="stay"]').textContent = tx(UI_TXT.exitStay);
-    d.querySelector('[data-c="exit"]').textContent = tx(UI_TXT.exitYes);
-    function close(exit) {
+    d.querySelector('.ldc-title').textContent = tx(o.title);
+    d.querySelector('.ldc-text').textContent = tx(o.text);
+    d.querySelector('[data-c="stay"]').textContent = tx(o.stay);
+    d.querySelector('[data-c="go"]').textContent = tx(o.go);
+    function close(go) {
       d.remove();
       document.removeEventListener('keydown', onKey, true);
-      if (exit) stop();
-      else if (!wasPaused) resume();
+      if (go) o.onGo(); else o.onStay();
     }
     function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(false); } }
     d.addEventListener('click', function (e) {
       var c = e.target.closest ? e.target.closest('[data-c]') : null;
-      if (c) close(c.getAttribute('data-c') === 'exit');
+      if (c) close(c.getAttribute('data-c') === 'go');
       else if (e.target === d) close(false);
     });
     document.addEventListener('keydown', onKey, true);
     document.body.appendChild(d);
     d.querySelector('[data-c="stay"]').focus();
+  }
+
+  function confirmExit() {
+    if (!S.running || S.done) { stop(); return; }
+    var wasPaused = S.paused;
+    if (!wasPaused) pause(true);
+    confirmBox({
+      title: UI_TXT.exitQ, text: UI_TXT.exitText, stay: UI_TXT.exitStay, go: UI_TXT.exitYes,
+      onGo: stop,
+      onStay: function () { if (!wasPaused) resume(); }
+    });
+  }
+
+  // Freeze first so the cursor stops immediately, then ask whether to stay paused.
+  function confirmPause() {
+    if (!S.running || S.done || S.paused) return;
+    pause(true);
+    confirmBox({
+      title: UI_TXT.pauseQ, text: UI_TXT.pauseText, stay: UI_TXT.pauseStay, go: UI_TXT.pauseYes,
+      onGo: function () { /* stay paused */ },
+      onStay: resume
+    });
   }
 
   function stop() {
@@ -1169,6 +1193,10 @@
     setTimeout(function go() {
       var loading = document.body.classList.contains('loading');
       if (loading && waited < 8000) { waited += 250; setTimeout(go, 250); return; }
+      // hold while the welcome modal is open; respect "explore on my own"
+      var br = LW.brand;
+      if (br && typeof br.welcomeOpen === 'function' && br.welcomeOpen()) { setTimeout(go, 250); return; }
+      if (br && br.choice === 'explore') { els.chip.hidden = false; renderBarText(); return; }
       var sc = parseInt(param('scene'), 10);
       start({ scene: isFinite(sc) ? sc : 0 });
     }, 1500);

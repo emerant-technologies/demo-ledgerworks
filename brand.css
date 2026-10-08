@@ -74,3 +74,49 @@
 .em-later:hover { background: #1a1b1e; }
 .em-cta:focus-visible, .em-later:focus-visible, .em-promo .em-x:focus-visible { outline: 2px solid #C8F031; outline-offset: 2px; }
 .em-url { margin-top: 14px; font-size: 12px; color: #6b7079; }
+
+/* welcome modal */
+.em-welcome-wrap {
+  position: fixed; inset: 0; z-index: 9300; pointer-events: auto;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(17, 18, 20, .42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  overflow-y: auto;
+  animation: emFade .25s ease-out;
+}
+.em-welcome-wrap.em-out { opacity: 0; transition: opacity .2s ease; }
+@keyframes emFade { from { opacity: 0; } }
+.em-welcome {
+  position: relative; width: min(560px, 100%); margin: auto;
+  padding: 26px 26px 20px; border-radius: 20px;
+  background: #111214; color: #F3F3EF;
+  box-shadow: 0 30px 90px rgba(17, 18, 20, .5);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  animation: emPop .3s cubic-bezier(.2, .9, .3, 1.15);
+}
+@keyframes emPop { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.em-w-title { font-size: 28px; margin-bottom: 6px; }
+.em-w-lead { margin: 0 0 18px; font-size: 15.5px; line-height: 1.5; color: #e4e6e9; }
+.em-w-list { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 12px; }
+.em-w-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: #c9ccd1; }
+.em-w-list b { display: block; color: #F3F3EF; font-weight: 700; margin-bottom: 1px; }
+.em-w-ic {
+  flex: none; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; background: #C8F031; color: #111214;
+}
+.em-w-sell {
+  margin: 0 0 18px; padding: 14px 16px; border-radius: 14px;
+  background: #1a1b1e; border: 1px solid #2a2c30;
+}
+.em-w-sell p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; color: #e4e6e9; }
+.em-w-contacts { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 14px; font-weight: 600; color: #6b7079; }
+.em-w-contacts a { color: #C8F031; text-decoration: none; }
+.em-w-contacts a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.em-w-contacts a:focus-visible { outline: 2px solid #C8F031; outline-offset: 2px; border-radius: 4px; }
+.em-w-actions .em-cta { border: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: 14.5px; height: 44px; padding: 0 18px; }
+.em-w-actions .em-later { height: 44px; }
+.em-w-note { margin: 14px 0 0; font-size: 12px; color: #6b7079; }
+@media (max-width: 520px) {
+  .em-welcome { padding: 22px 18px 16px; }
+  .em-w-title { font-size: 23px; }
+  .em-w-actions > * { flex: 1 1 100%; justify-content: center; }
+}
