@@ -311,12 +311,10 @@
   MEN.forEach((k, i) => def('mon.' + k, MEN_EN[i], MEN_BG[i]));
 
   /* ---- language state ---- */
-  const LS = 'lw-lang';
   function norm(l) { l = String(l || '').toLowerCase().slice(0, 2); return l === 'bg' || l === 'en' ? l : null; }
   function initialLang() {
     let l = null;
     try { l = norm(new URLSearchParams(location.search).get('lang')); } catch (e) { /* noop */ }
-    if (!l) { try { l = norm(localStorage.getItem(LS)); } catch (e) { /* noop */ } }
     return l || 'bg';
   }
 
@@ -337,7 +335,6 @@
       if (!l) return I.lang;
       const changed = l !== I.lang;
       I.lang = l;
-      try { localStorage.setItem(LS, l); } catch (e) { /* noop */ }
       document.documentElement.lang = l;
       if (changed) {
         listeners.slice().forEach((fn) => { try { fn(l); } catch (e) { console.warn('[i18n] listener failed', e); } });

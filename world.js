@@ -22,15 +22,26 @@
   };
   var LABELS = {};
   Object.keys(NAMES).forEach(function (k) { LABELS[k] = NAMES[k]; });
-  var ACC = {
+  // Calm palette: hues keep their identity, saturation is pulled toward a neutral grey-blue.
+  function muteHex(hex, k) {
+    var c = new T.Color(hex), hsl = { h: 0, s: 0, l: 0 };
+    c.getHSL(hsl);
+    var sat = hsl.s * (1 - k);
+    c.setHSL(hsl.h, sat, hsl.l);
+    c.lerp(new T.Color('#8a96a8'), 0.1 * hsl.s * k * 2);
+    return '#' + c.getHexString();
+  }
+  function muteMap(o, k) { var r = {}; Object.keys(o).forEach(function (key) { r[key] = muteHex(o[key], k); }); return r; }
+  var GLOBAL_MUTE = 0.3;   // applied to every lit material colour in mat()
+  var ACC = muteMap({
     sales: '#2f6bff', procure: '#8b5cf6', warehouse: '#f59e0b', bank: '#10b981', payroll: '#ec4899',
     ledger: '#0ea5e9', reporting: '#6366f1', customers: '#2f6bff', vendors: '#8b5cf6'
-  };
-  var KIND = {
+  }, 0.25);
+  var KIND = muteMap({
     invoice: '#2f6bff', bill: '#8b5cf6', cash: '#10b981', goods: '#f59e0b', payroll: '#ec4899',
     entry: '#22d3ee', report: '#6366f1'
-  };
-  var STATUS_COL = { ok: '#22c55e', warn: '#f59e0b', alert: '#ef4444' };
+  }, 0.25);
+  var STATUS_COL = { ok: '#a3acb9', warn: '#d9a03f', alert: '#cf5a52' };
 
   // world position, footprint [w,d], door node, ground pad rect
   var DEF = {
@@ -115,8 +126,8 @@
     o = o || {};
     var k = hex + '|' + JSON.stringify(o);
     if (MC[k]) return MC[k];
-    var p = { color: C(hex) };
-    if (o.e) { p.emissive = C(o.e); p.emissiveIntensity = o.ei != null ? o.ei : 1; }
+    var p = { color: C(o.raw ? hex : muteHex(hex, GLOBAL_MUTE)) };
+    if (o.e) { p.emissive = C(o.e); p.emissiveIntensity = (o.ei != null ? o.ei : 1) * 0.1; } // no glow, only a trace of tint
     if (o.o != null) { p.transparent = true; p.opacity = o.o; p.depthWrite = o.o > 0.6; }
     var m;
     if (o.std) {
@@ -150,13 +161,13 @@
 
   /* ---------- palette ---------- */
   var P = {
-    wall: '#f7f9fd', wall2: '#e8eef8', white: '#ffffff', plinth: '#cfd8e6', roof: '#f1f4fa', dark: '#2a3550',
-    dark2: '#3a4560', conc: '#e1e7f0', grey: '#c6cfdd', tire: '#232b3b', hub: '#d5dce8', wood: '#d9a066',
-    wood2: '#b9803f', gold: '#fbbf24', gold2: '#d9970b', green: '#6ecb83'
+    wall: '#f1f0ec', wall2: '#e4e4e1', white: '#f8f7f4', plinth: '#c9c8c3', roof: '#e3e2de', dark: '#3a4252',
+    dark2: '#4a5262', conc: '#e1e0dc', grey: '#c6c7c8', tire: '#2c3038', hub: '#cfd0d1', wood: '#cf9f6e',
+    wood2: '#b08550', gold: '#e2b84a', gold2: '#c09a3a', green: '#7fb48c'
   };
-  function glass() { return mat('#8fcaff', { std: true, r: 0.25, m: 0.05, e: '#2e78c4', ei: 0.35 }); }
-  function glassDark() { return mat('#4aa3ee', { std: true, r: 0.2, m: 0.05, e: '#1d6fc2', ei: 0.45 }); }
-  function glassVeh() { return mat('#2c3b57', { std: true, r: 0.2, m: 0.1, e: '#3b5f93', ei: 0.3 }); }
+  function glass() { return mat('#a9c3d8', { std: true, r: 0.35, m: 0.02, e: '#6f96b8', ei: 0.3 }); }
+  function glassDark() { return mat('#7fa3c2', { std: true, r: 0.35, m: 0.02, e: '#4d7396', ei: 0.3 }); }
+  function glassVeh() { return mat('#3b4a60', { std: true, r: 0.35, m: 0.05, e: '#4a6283', ei: 0.2 }); }
 
   /* ---------- merge static meshes per material (keeps draw calls low) ---------- */
   function mergeGeos(list) {
@@ -240,14 +251,15 @@
     var h = Math.ceil(fs + pad * 1.05), w = tw + pad * 2 + (dotR ? dotR * 2 + 8 * s : 0), sh = 7 * s;
     cv.width = Math.ceil(w + sh * 2); cv.height = Math.ceil(h + sh * 2);
     ctx.font = font; ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(20,30,60,.30)'; ctx.shadowBlur = sh; ctx.shadowOffsetY = 2 * s;
-    ctx.fillStyle = o.bg || 'rgba(255,255,255,.97)';
+    ctx.shadowColor = 'rgba(30,38,56,.20)'; ctx.shadowBlur = sh * 0.7; ctx.shadowOffsetY = 1.5 * s;
+    ctx.fillStyle = o.bg || 'rgba(255,255,255,.98)';
     rr(ctx, sh, sh, w, h, h / 2); ctx.fill();
     ctx.shadowColor = 'transparent';
-    if (o.border) { ctx.strokeStyle = o.border; ctx.lineWidth = 2 * s; rr(ctx, sh, sh, w, h, h / 2); ctx.stroke(); }
+    var bd = o.border || (o.bg ? null : 'rgba(70,82,104,.28)');
+    if (bd) { ctx.strokeStyle = bd; ctx.lineWidth = 1.6 * s; rr(ctx, sh, sh, w, h, h / 2); ctx.stroke(); }
     var x = sh + pad;
     if (dotR) { ctx.fillStyle = o.dot; ctx.beginPath(); ctx.arc(x + dotR, sh + h / 2, dotR, 0, 7); ctx.fill(); x += dotR * 2 + 8 * s; }
-    ctx.fillStyle = o.fg || '#1b2540';
+    ctx.fillStyle = o.fg || '#222c3f';
     ctx.fillText(text, x, sh + h / 2 + s);
     return cv;
   }
@@ -650,12 +662,8 @@
     core.castShadow = true; em.add(core);
     var ring1 = new T.Mesh(new T.TorusGeometry(2.1, 0.13, 8, 36), mat('#ffffff', { std: true, r: 0.3, e: '#9fe7ff', ei: 0.5 })); em.add(ring1);
     var ring2 = new T.Mesh(new T.TorusGeometry(2.1, 0.13, 8, 36), mat(P.gold, { std: true, r: 0.3, e: '#ffb800', ei: 0.4 })); ring2.rotation.x = Math.PI / 2; em.add(ring2);
-    var halo = glowSprite('#7fe3ff', 7, 0.55); em.add(halo);
-    S.tick.push(function (t, dt) {
-      em.rotation.y += dt * 0.45; core.rotation.x += dt * 0.3; core.rotation.z += dt * 0.2;
-      ring1.rotation.z += dt * 0.35; ring2.rotation.y += dt * 0.27;
-      em.position.y = t2 + 7.3 + Math.sin(t * 0.8) * 0.25;
-    });
+    // calm: the emblem stands still (no spin, bob or halo)
+    em.rotation.y = 0.6;
     return { top: t2 + 10.2, beacon: [pW / 2 - 0.4, pt, fz - 0.8], label: t2 + 11.6, anchor: [0, 17, fz + 4.5], pitch: 0,
       proxies: [[pW + 1, pt + 0.4, pD + 1, 0, (pt + 0.4) / 2, 0], [tW + 1, t2 - 1, tW + 1, 0, (t2 + 2) / 2 + 0.2, -0.4], [5.4, 3.8, 6.8, wx, 1.9, wz]] };
   }
@@ -688,9 +696,6 @@
     });
     // trend arrow
     var tl = new T.Group(); tl.userData.dyn = true; tl.position.set(0, 1.3, 0.3); bb.add(tl);
-    S.tick.push(function (t) {
-      bars.forEach(function (b) { b.g.scale.y = Math.max(0.05, b.h * (1 + Math.sin(t * 1.2 + b.ph) * 0.06)); });
-    });
     // pie chart (roof corner)
     var pieG = new T.Group(); pieG.position.set(-5.2, top + 2.0, 2.4); pieG.rotation.x = 0; g.add(pieG);
     var slices = [[0, 3.4, A], [3.4, 1.7, '#8fa0ff'], [5.1, 1.18, '#fbbf24']];
@@ -762,7 +767,7 @@
     return finish(g);
   }
   function makeArmored() {
-    var g = new T.Group(), gm = mat('#10b981'), dm = mat('#0b8a61');
+    var g = new T.Group(), gm = mat(KIND.cash), dm = mat(mixHex(KIND.cash, '#2a3a3a', 0.35));
     bx(g, 1.95, 0.5, 4.7, mat(P.dark), 0, 0.3, 0);
     bx(g, 1.95, 1.3, 1.2, dm, 0, 0.7, 1.75);
     bx(g, 1.75, 0.5, 0.07, glassVeh(), 0, 1.3, 2.36);
@@ -772,7 +777,7 @@
       add(g, cylGeo(0.62, 0.62, 0.08, 16), mat(P.gold, { std: true, r: 0.35 }), s * 1.05, 1.75, -0.6, { rz: Math.PI / 2 });
       bx(g, 0.07, 0.18, 0.7, glassVeh(), s * 1.04, 2.2, 0.7);
     });
-    bx(g, 0.6, 0.18, 0.6, mat('#ffd44d', { e: '#ffb300', ei: 0.7 }), 0, 2.75, 1.5);
+    bx(g, 0.6, 0.18, 0.6, mat('#e0c070'), 0, 2.75, 1.5);
     bx(g, 1.95, 0.22, 0.2, mat(P.dark2), 0, 0.35, 2.42);
     lights(g, 0.62, 0.75, 2.38, -2.33);
     wheels(g, [1.6, -1.6], 1.0, 0.5);
@@ -827,7 +832,7 @@
   }
   function makeDrone(hex) {
     var g = new T.Group();
-    var card = mat('#ffffff', { e: hex, ei: 0.9 });
+    var card = mat('#fbfbf9');
     var inner = g.userData.inner = new T.Group(); g.add(inner);
     bx(inner, 2.2, 0.14, 1.6, card, 0, 0, 0, { ns: true });
     bx(inner, 2.3, 0.1, 0.14, mat('#ffffff'), 0, 0.05, 0.75, { ns: true });
@@ -838,7 +843,6 @@
       bx(inner, 0.5, 0.06, 0.1, mat('#445070'), c[0] * 0.8, 0.05, c[1] * 0.58, { ns: true, ry: Math.atan2(c[0], c[1]) });
       var r = new T.Mesh(cylGeo(0.5, 0.5, 0.03, 12), mat('#ffffff', { o: 0.5 })); r.position.set(c[0] * 1.05, 0.18, c[1] * 0.78); inner.add(r); rotors.push(r);
     });
-    var gl = glowSprite(hex, 5.2, 0.55); gl.position.y = -0.1; inner.add(gl);
     g.userData.rotors = rotors; g.userData.dyn = true;
     return g;
   }
@@ -949,16 +953,16 @@
     // soft contact shadow under the slab
     var sTex = canvasTex(128, 128, function (c) {
       var g = c.createRadialGradient(64, 64, 20, 64, 64, 64);
-      g.addColorStop(0, 'rgba(60,80,120,.30)'); g.addColorStop(1, 'rgba(60,80,120,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128);
+      g.addColorStop(0, 'rgba(70,70,76,.22)'); g.addColorStop(1, 'rgba(70,70,76,0)'); c.fillStyle = g; c.fillRect(0, 0, 128, 128);
     });
     var sh = new T.Mesh(new T.PlaneGeometry(sw * 1.35, sd * 1.5), new T.MeshBasicMaterial({ map: sTex, transparent: true, depthWrite: false, toneMapped: false }));
     sh.rotation.x = -Math.PI / 2; sh.position.set(cx, -3.6, cz + 3); scene.add(sh);
     // slab
-    var slab = new T.Mesh(boxGeo(sw, 3, sd), mat('#cdd7e6')); slab.position.set(cx, -1.5 - 0.0, cz); slab.receiveShadow = true; scene.add(slab);
-    var top = new T.Mesh(boxGeo(sw - 0.8, 0.12, sd - 0.8), mat('#f4f6fa')); top.position.set(cx, -0.06 + 0.0, cz); top.receiveShadow = true; scene.add(top);
+    var slab = new T.Mesh(boxGeo(sw, 3, sd), mat('#c8c5bf')); slab.position.set(cx, -1.5 - 0.0, cz); slab.receiveShadow = true; scene.add(slab);
+    var top = new T.Mesh(boxGeo(sw - 0.8, 0.12, sd - 0.8), mat('#ebe9e4')); top.position.set(cx, -0.06 + 0.0, cz); top.receiveShadow = true; scene.add(top);
     slab.position.y = -1.56;
     // lawns (outside the loop)
-    var lawn = mat('#e1f1da');
+    var lawn = mat('#dce5d4');
     function lawnRect(x0, x1, z0, z1) {
       var m = new T.Mesh(boxGeo(x1 - x0, 0.06, z1 - z0), lawn); m.position.set((x0 + x1) / 2, 0.03, (z0 + z1) / 2); m.receiveShadow = true; scene.add(m);
     }
@@ -970,9 +974,9 @@
   }
 
   function buildRoads(scene) {
-    var roadM = mat('#8792a5'), roadM2 = mat('#7e899c');
+    var roadM = mat('#8d8b87'), roadM2 = mat('#86847f');
     var grp = new T.Group();
-    var curb = mat('#eef1f7');
+    var curb = mat('#e6e3de');
     ROADS.forEach(function (r) {
       var horiz = r[1] === r[3];
       var x0 = Math.min(r[0], r[2]), x1 = Math.max(r[0], r[2]), z0 = Math.min(r[1], r[3]), z1 = Math.max(r[1], r[3]);
@@ -1011,7 +1015,7 @@
         if (!skip) dashes.push([x, z, horiz ? 0 : Math.PI / 2]);
       }
     });
-    var dm = inst(boxGeo(1.7, 0.02, 0.2), mat('#f6f8fc'), dashes.length, false);
+    var dm = inst(boxGeo(1.7, 0.02, 0.2), mat('#dedbd5'), dashes.length, false);
     dashes.forEach(function (d, i) { dm.setMatrixAt(i, compose(d[0], ROAD_Y + 0.012, d[1], d[2])); });
     scene.add(dm);
     // crosswalks
@@ -1023,7 +1027,7 @@
     zebra(-LX, 6, true); zebra(LX, 6, true);
     zebra(-50, AZ, false); zebra(50, AZ, false);
     // horizontal-stripe crosswalks on avenues (stripes run along road direction)
-    var zm = inst(boxGeo(2.2, 0.02, 0.36), mat('#f6f8fc'), zs.length, false);
+    var zm = inst(boxGeo(2.2, 0.02, 0.36), mat('#dedbd5'), zs.length, false);
     zs.forEach(function (d, i) { zm.setMatrixAt(i, compose(d[0], ROAD_Y + 0.012, d[1], d[2])); });
     scene.add(zm);
   }
@@ -1053,7 +1057,7 @@
       var x = lerp(SLAB.x0 + 3, SLAB.x1 - 3, rand()), z = lerp(SLAB.z0 + 3, SLAB.z1 - 3, rand());
       if (okTree(x, z)) pts.push([x, z, rand(), rand() > 0.42]);
     }
-    var greens = ['#5cc17a', '#4fb36a', '#7dd08c', '#3fa763', '#6fcf8f'];
+    var greens = ['#5cc17a', '#4fb36a', '#7dd08c', '#3fa763', '#6fcf8f'].map(function (h) { return muteHex(h, 0.45); });
     var trunkM = mat('#b98b5e', { std: true, r: 0.9 }), leafM = mat('#ffffff', { std: true, r: 0.85, flat: true });
     var trunkG = new T.CylinderGeometry(0.22, 0.3, 1.5, 6); trunkG.translate(0, 0.75, 0);
     var pineG1 = new T.ConeGeometry(1.7, 2.8, 7); pineG1.translate(0, 2.4, 0);
@@ -1098,7 +1102,7 @@
     var poleG = new T.CylinderGeometry(0.1, 0.14, 3.6, 6); poleG.translate(0, 1.8, 0);
     var headG = new T.SphereGeometry(0.34, 8, 6); headG.translate(0, 3.7, 0);
     var armG = new T.BoxGeometry(0.9, 0.1, 0.1); armG.translate(0.35, 3.55, 0);
-    var pm = inst(poleG, mat('#9aa6bb'), lamps.length), hm = inst(headG, basic('#fff1b8'), lamps.length, false), am2 = inst(armG, mat('#9aa6bb'), lamps.length, false);
+    var pm = inst(poleG, mat('#9aa6bb'), lamps.length), hm = inst(headG, basic('#e9e2c8'), lamps.length, false), am2 = inst(armG, mat('#9aa6bb'), lamps.length, false);
     lamps.forEach(function (l, i) { var m = compose(l[0], 0, l[1], 0); pm.setMatrixAt(i, m); hm.setMatrixAt(i, m); am2.setMatrixAt(i, m); });
     [pm, hm, am2].forEach(function (m) { m.instanceMatrix.needsUpdate = true; scene.add(m); });
     // benches + planter ring in the plaza between payroll and ledger
@@ -1108,12 +1112,10 @@
     [[-8.5, 17.3, 0], [8.5, 17.3, 0]].forEach(function (b) { var c = bench.clone(); c.position.set(b[0], 0.06, b[1]); c.rotation.y = Math.PI; scene.add(c); });
     // fountain in the plaza lawn
     var fnt = new T.Group(); fnt.position.set(0, 0.06, 17.1); scene.add(fnt);
-    cy(fnt, 1.6, 1.8, 0.45, 20, mat('#e8eef8'), 0, 0, 0);
-    cy(fnt, 1.35, 1.35, 0.1, 20, mat('#7fd0ff', { std: true, r: 0.1, e: '#4db4ff', ei: 0.35 }), 0, 0.42, 0);
+    cy(fnt, 1.6, 1.8, 0.45, 20, mat('#e4e4e1'), 0, 0, 0);
+    cy(fnt, 1.35, 1.35, 0.1, 20, mat('#9cc3dc', { std: true, r: 0.2, e: '#6fa0c4', ei: 0.3 }), 0, 0.42, 0);
     cy(fnt, 0.25, 0.3, 1.0, 8, mat('#e8eef8'), 0, 0.4, 0);
     cy(fnt, 0.7, 0.5, 0.2, 14, mat('#e8eef8'), 0, 1.3, 0);
-    var spray = glowSprite('#bfe6ff', 2.2, 0.8); spray.position.y = 1.9; fnt.add(spray);
-    S.tick.push(function (t) { spray.scale.setScalar(2.0 + Math.sin(t * 3) * 0.25); });
   }
 
   function buildGate(scene, id, x) {
@@ -1131,7 +1133,6 @@
       txt = String(txt || '').toUpperCase();
       c.clearRect(0, 0, w, h);
       c.fillStyle = A; c.fillRect(0, 0, w, h);
-      c.fillStyle = 'rgba(255,255,255,.14)'; for (var i = -2; i < 12; i++) { c.beginPath(); c.moveTo(i * 70, h); c.lineTo(i * 70 + 40, h); c.lineTo(i * 70 + 100, 0); c.lineTo(i * 70 + 60, 0); c.fill(); }
       var fs = 78, maxW = w - 80;
       c.font = '800 ' + fs + 'px ' + FONT;
       var tw = c.measureText(txt).width;
@@ -1160,7 +1161,7 @@
     var b = { id: id, group: g, endpoint: true, drawSign: drawSign, label: null, badge: null, top: 9.2, accent: A, center: new T.Vector3(x, 0, AZ), radius: 8, anchor: new T.Vector3(x, 8, AZ) };
     S.endpoints[id] = b;
     // name pill
-    var nm = pillSprite(LABELS[id], { dot: A, fs: 22 }, 1.6); nm.position.set(0, 10.6, 0); g.add(nm); b.label = nm;
+    var nm = pillSprite(LABELS[id], { dot: A, fs: 24 }, 1.8); nm.position.set(0, 10.6, 0); g.add(nm); b.label = nm;
     // beacon dot for endpoints not needed
     b.badgeY = 12.8;
   }
@@ -1185,19 +1186,18 @@
       var pad = d.pad, pw = pad[1] - pad[0], pd = pad[3] - pad[2];
       var otex = canvasTex(256, Math.max(128, Math.round(256 * pd / pw)), function (c, w, h) {
         c.clearRect(0, 0, w, h);
-        c.shadowColor = acc; c.shadowBlur = 18; c.strokeStyle = acc; c.lineWidth = 9; rr(c, 14, 14, w - 28, h - 28, 26); c.stroke();
-        c.shadowBlur = 0; c.strokeStyle = '#fff'; c.lineWidth = 2.5; rr(c, 14, 14, w - 28, h - 28, 26); c.stroke();
+        c.strokeStyle = acc; c.lineWidth = 6; rr(c, 14, 14, w - 28, h - 28, 26); c.stroke();
       });
       var om = new T.MeshBasicMaterial({ map: otex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
       var outline = new T.Mesh(new T.PlaneGeometry(pw, pd), om);
       outline.rotation.x = -Math.PI / 2; outline.position.set((pad[0] + pad[1]) / 2, PAD_Y + 0.05, (pad[2] + pad[3]) / 2); scene.add(outline);
       // labels
-      var name = pillSprite(LABELS[id], { dot: acc, fs: 22 }, 1.7); name.position.set(0, info.label, 0); g.add(name);
+      var name = pillSprite(LABELS[id], { dot: acc, fs: 24 }, 1.9); name.position.set(0, info.label, 0); g.add(name);
       // beacon
       var bc = new T.Group(); bc.position.set(info.beacon[0], info.beacon[1], info.beacon[2]); g.add(bc);
       var pole = new T.Mesh(cylGeo(0.08, 0.1, 1.1, 6), mat(P.dark2)); pole.position.y = 0.55; bc.add(pole);
-      var bulb = new T.Mesh(new T.SphereGeometry(0.42, 12, 8), new T.MeshBasicMaterial({ color: C(STATUS_COL.ok), toneMapped: false })); bulb.position.y = 1.35; bc.add(bulb);
-      var halo = glowSprite(STATUS_COL.ok, 3.4, 0.7); halo.position.y = 1.35; bc.add(halo);
+      var bulb = new T.Mesh(new T.SphereGeometry(0.32, 12, 8), new T.MeshBasicMaterial({ color: C(STATUS_COL.ok), toneMapped: false })); bulb.position.y = 1.35; bc.add(bulb);
+      var halo = { material: { color: new T.Color(), opacity: 0 }, scale: { set: function () {} } }; // legacy handle, no visible halo
       var b = {
         id: id, group: g, meshes: meshes, proxies: proxies, outline: outline, label: name, badge: null, accent: acc,
         top: info.top, center: new T.Vector3(d.pos[0], 0, d.pos[1]), radius: Math.max(d.size[0], d.size[1]) / 2 + 2,
@@ -1218,28 +1218,9 @@
       model.position.y = ROAD_Y; if (v.delay > 0) model.visible = false; scene.add(model); S.ambient.push(v);
     }
     // v2: ~55% of v1 speed, staggered start and slow speed waves so different parts of the map move at different times
-    vehicleOnLoop(makeVan('#ffffff', '#ffffff', { stripe: '#2f6bff' }), ['NW', 'NE', 'CE', 'CW'], false, 6.5, 1.0, 0.1, 0.5, 46);
-    vehicleOnLoop(makeCar('#fbbf24'), ['NW', 'NE', 'CE', 'CW'], true, 7.8, 1.0, 0.55, 5.5, 37);
-    vehicleOnLoop(makeFlatbed('#3b82f6', false), ['AP', 'AQ', 'CQ', 'CP'], false, 5.7, 1.0, 0.3, 11, 53);
-    vehicleOnLoop(makeVan('#34d399', '#f4f6fb', { stripe: '#10b981' }), ['AP', 'AQ', 'CQ', 'CP'], true, 6.8, 1.0, 0.8, 17, 43);
-    // forklift shuffling in the warehouse yard
-    var fl = makeForklift();
-    var fpts = [new T.Vector3(19.8, 0, 32.6), new T.Vector3(25.2, 0, 32.6), new T.Vector3(25.2, 0, 34.6), new T.Vector3(19.8, 0, 34.6)];
-    var fpath = makePath(smoothPath(fpts, 1.0, true));
-    var fv = { group: fl, path: fpath, s: 0, speed: 2.3, yaw: 0, pos: new T.Vector3(), dir: new T.Vector3(), delay: 3, age: 0, period: 29, ph: 2 };
-    fl.position.y = PAD_Y; fl.visible = false; scene.add(fl); S.ambient.push(fv);
-    // idle document drones circling ledger and reporting
-    var d1 = makeDrone('#22d3ee'); scene.add(d1);
-    var d2 = makeDrone('#6366f1'); scene.add(d2);
-    S.tick.push(function (t) {
-      var a = t * 0.126;
-      d1.position.set(Math.cos(a) * 12, 12 + Math.sin(t * 0.9) * 0.4, -22 + Math.sin(a) * 9);
-      d1.rotation.y = -a + Math.PI; d1.userData.inner.rotation.z = Math.sin(t * 0.7) * 0.08;
-      var b = -t * 0.153 + 1.2;
-      d2.position.set(Math.cos(b) * 10, 9 + Math.sin(t * 1.0 + 1) * 0.4, 26 + Math.sin(b) * 7);
-      d2.rotation.y = -b - Math.PI; d2.userData.inner.rotation.z = Math.sin(t * 0.6 + 2) * 0.08;
-      [d1, d2].forEach(function (d) { d.userData.rotors.forEach(function (r) { r.rotation.y += 0.9; }); });
-    });
+    // calm: just two slow background vehicles, constant speed
+    vehicleOnLoop(makeVan('#e9e9e6', '#f1f0ec', { stripe: '#7f93b8' }), ['NW', 'NE', 'CE', 'CW'], false, 2.9, 1.0, 0.1, 0.5, 46);
+    vehicleOnLoop(makeFlatbed('#8d9bb0', false), ['AP', 'AQ', 'CQ', 'CP'], false, 2.6, 1.0, 0.3, 11, 53);
   }
 
   function updateAmbient(dt) {
@@ -1250,8 +1231,7 @@
         v.group.visible = true;
       }
       v.age += dt;
-      var wave = clamp(0.72 + 0.55 * Math.sin(v.age * 6.2832 / v.period + v.ph), 0.2, 1);
-      v.s = (v.s + v.speed * wave * dt) % v.path.L;
+      v.s = (v.s + v.speed * dt) % v.path.L;
       sampleAt(v.path, v.s, v.pos, null);
       sampleAt(v.path, (v.s + 0.8) % v.path.L, _tmpA, null);
       var dx = _tmpA.x - v.pos.x, dz = _tmpA.z - v.pos.z;
@@ -1268,12 +1248,12 @@
   }
   function makeFlowVehicle(kind) {
     switch (kind) {
-      case 'invoice': return makeVan('#2f6bff', '#f4f7ff', { paper: true });
-      case 'bill': return makeVan('#8b5cf6', '#f2eeff', { paper: true });
+      case 'invoice': return makeVan(KIND.invoice, '#f1f2f5', { paper: true });
+      case 'bill': return makeVan(KIND.bill, '#f2f0f5', { paper: true });
       case 'cash': return makeArmored();
-      case 'goods': return makeFlatbed('#f59e0b');
-      case 'payroll': return makeCar('#ec4899');
-      default: return makeVan('#64748b', '#e2e8f0');
+      case 'goods': return makeFlatbed(KIND.goods);
+      case 'payroll': return makeCar(KIND.payroll);
+      default: return makeVan('#7c8799', '#e2e5ea');
     }
   }
   var LOOK = 4.0;
@@ -1286,15 +1266,15 @@
     var group = new T.Group(); group.add(model); group.position.y = ROAD_Y; group.scale.setScalar(0.001);
     var col = KIND[kind] || '#2f6bff';
     var lbl = null;
-    if (h.label) { lbl = pillSprite(String(h.label), { dot: col, fs: 24 }, 1.5); lbl.position.set(0, 4.6, 0); group.add(lbl); }
+    if (h.label) { lbl = pillSprite(String(h.label), { dot: col, fs: 24 }, 1.7); lbl.position.set(0, 4.8, 0); group.add(lbl); }
     S.scene.add(group);
-    var v = { group: group, label: lbl, path: path, s: 0, t: 0, state: 'in', speed: 9.5 * ((opts && opts.speed) || 1), yaw: 0, pos: new T.Vector3(), kind: kind, done: done, to: h.to };
+    var v = { group: group, label: lbl, path: path, s: 0, t: 0, state: 'in', speed: 5.7 * ((opts && opts.speed) || 1), yaw: 0, pos: new T.Vector3(), kind: kind, done: done, to: h.to };
     sampleAt(path, 0, v.pos, null); sampleAt(path, 1.0, _tmpA, null);
     v.yaw = Math.atan2(_tmpA.x - v.pos.x, _tmpA.z - v.pos.z);
     model.rotation.y = 0; group.rotation.y = v.yaw; group.position.x = v.pos.x; group.position.z = v.pos.z;
     v.update = function (dt) {
       if (v.state === 'in') {
-        v.t += dt; var k = clamp(v.t / 0.7, 0, 1); group.scale.setScalar(Math.max(0.001, easeOutBack(k)));
+        v.t += dt; var k = clamp(v.t / 0.9, 0, 1); group.scale.setScalar(Math.max(0.001, easeIO(k)));
         if (k >= 1) { v.state = 'drive'; group.scale.setScalar(1); }
       } else if (v.state === 'drive') {
         var sp = v.speed * Math.min(1, 0.3 + v.s / 4, 0.25 + (path.L - v.s) / 5);
@@ -1307,7 +1287,7 @@
       } else if (v.state === 'wait') {
         v.t += dt; if (v.t > 0.8) { v.state = 'out'; v.t = 0; }
       } else {
-        v.t += dt; var k2 = clamp(v.t / 0.6, 0, 1); group.scale.setScalar(Math.max(0.001, 1 - easeIO(k2)));
+        v.t += dt; var k2 = clamp(v.t / 0.9, 0, 1); group.scale.setScalar(Math.max(0.001, 1 - easeIO(k2)));
         if (k2 >= 1) return true;
       }
       return false;
@@ -1327,16 +1307,15 @@
     var path = makePath(pts);
     var model = makeDrone(col), group = new T.Group(); group.add(model); group.scale.setScalar(0.001);
     var lbl = null;
-    if (h.label) { lbl = pillSprite(String(h.label), { dot: col, fs: 24 }, 1.5); lbl.position.set(0, 3.2, 0); group.add(lbl); }
+    if (h.label) { lbl = pillSprite(String(h.label), { dot: col, fs: 24 }, 1.7); lbl.position.set(0, 3.4, 0); group.add(lbl); }
     S.scene.add(group);
-    var v = { group: group, state: 'in', t: 0, s: 0, speed: 7.7 * ((opts && opts.speed) || 1), yaw: 0, pos: new T.Vector3(), to: h.to };
+    var v = { group: group, state: 'in', t: 0, s: 0, speed: 4.6 * ((opts && opts.speed) || 1), yaw: 0, pos: new T.Vector3(), to: h.to };
     sampleAt(path, 0, v.pos, null); group.position.copy(v.pos);
     v.yaw = Math.atan2(dir.x, dir.z); group.rotation.y = v.yaw;
     v.update = function (dt) {
-      model.userData.rotors.forEach(function (r) { r.rotation.y += dt * 40; });
-      model.userData.inner.position.y = Math.sin(S.t * 6 + v.s) * 0.1;
+      model.userData.inner.position.y = Math.sin(S.t * 2.2 + v.s * 0.2) * 0.05;
       if (v.state === 'in') {
-        v.t += dt; var k = clamp(v.t / 0.3, 0, 1); group.scale.setScalar(Math.max(0.001, easeOutBack(k)));
+        v.t += dt; var k = clamp(v.t / 0.6, 0, 1); group.scale.setScalar(Math.max(0.001, easeIO(k)));
         if (k >= 1) { v.state = 'drive'; group.scale.setScalar(1); }
       } else if (v.state === 'drive') {
         var sp = v.speed * Math.min(1, 0.35 + v.s / 5, 0.3 + (path.L - v.s) / 6);
@@ -1348,10 +1327,10 @@
         model.userData.inner.rotation.x = clamp((_tmpA.y - v.pos.y) * -0.05, -0.25, 0.25);
         if (v.s >= path.L) { v.state = 'wait'; v.t = 0; softPulse(v.to, col); }
       } else if (v.state === 'wait') {
-        v.t += dt; if (v.t > 0.4) { v.state = 'out'; v.t = 0; }
+        v.t += dt; if (v.t > 0.7) { v.state = 'out'; v.t = 0; }
       } else {
-        v.t += dt; var k2 = clamp(v.t / 0.3, 0, 1); group.scale.setScalar(Math.max(0.001, 1 - easeIO(k2)));
-        group.position.y -= dt * 2;
+        v.t += dt; var k2 = clamp(v.t / 0.7, 0, 1); group.scale.setScalar(Math.max(0.001, 1 - easeIO(k2)));
+        group.position.y -= dt * 0.8;
         if (k2 >= 1) return true;
       }
       return false;
@@ -1391,48 +1370,22 @@
   }
 
   /* ---------- pulses ---------- */
-  var _ringGeo = null, _colGeo = null;
+  // Calm: a pulse is a single, very faint outline fade on the building pad (~1.2s). No rings, columns or glows.
+  var PULSE_DUR = 1.2, PULSE_MAX = 0.22;
   function pulse(id, color, soft) {
     var b = endpointInfo(id); if (!b || !S.ready) return;
-    var col = new T.Color(color || b.accent);
-    if (!_ringGeo) { _ringGeo = new T.RingGeometry(0.93, 1, 64); _ringGeo.rotateX(-Math.PI / 2); }
-    if (!_colGeo) _colGeo = new T.CylinderGeometry(1, 1, 1, 32, 1, true);
-    var r = b.radius, rings = [];
-    for (var i = 0; i < (soft ? 1 : 2); i++) {
-      var m = new T.Mesh(_ringGeo, new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: T.DoubleSide }));
-      m.position.set(b.center.x, 0.3, b.center.z); m.renderOrder = 5; S.scene.add(m); rings.push(m);
-    }
-    var cm = new T.Mesh(_colGeo, new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: T.AdditiveBlending, side: T.DoubleSide }));
-    cm.position.set(b.center.x, 0.1, b.center.z); cm.renderOrder = 4; S.scene.add(cm);
-    S.pulses.push({ rings: rings, col: cm, t: 0, dur: soft ? 0.9 : 1.5, r: r, b: b, soft: !!soft, height: soft ? 5 : Math.min(b.top, 22) });
-    if (!soft) b.flash = 1;
+    if (soft || !b.outline) return;
+    b.flash = 1;
   }
   function softPulse(id, color) { pulse(id, color, true); }
-  function updatePulses(dt) {
-    for (var i = S.pulses.length - 1; i >= 0; i--) {
-      var p = S.pulses[i]; p.t += dt;
-      var k = clamp(p.t / p.dur, 0, 1);
-      p.rings.forEach(function (m, j) {
-        var kk = clamp((p.t - j * 0.28) / p.dur, 0, 1), e = 1 - Math.pow(1 - kk, 2.2);
-        var s = p.r * (0.7 + e * (p.soft ? 1.2 : 1.9));
-        m.scale.set(s, 1, s); m.material.opacity = kk <= 0 ? 0 : (1 - kk) * 0.9;
-      });
-      var h = p.height * (0.3 + 0.7 * Math.min(1, k * 2.2));
-      p.col.scale.set(p.r * (0.9 + k * 0.3), Math.max(0.01, h), p.r * (0.9 + k * 0.3)); p.col.position.y = h / 2;
-      p.col.material.opacity = (1 - k) * (p.soft ? 0.18 : 0.3);
-      if (k >= 1) {
-        p.rings.forEach(function (m) { S.scene.remove(m); m.material.dispose(); });
-        S.scene.remove(p.col); p.col.material.dispose(); S.pulses.splice(i, 1);
-      }
-    }
-  }
+  function updatePulses(dt) { /* nothing to animate any more */ }
 
   /* ---------- hover / selection ---------- */
   var HI = typeof Map !== 'undefined' ? new Map() : null;
   function hiMat(m) {
     if (!m.emissive) return m;
     var h = HI.get(m);
-    if (!h) { h = m.clone(); h.emissive = m.emissive.clone().add(m.color.clone().multiplyScalar(0.32)); h.emissiveIntensity = Math.max(m.emissiveIntensity, 1); HI.set(m, h); }
+    if (!h) { h = m.clone(); h.emissive = m.emissive.clone().multiplyScalar(m.emissiveIntensity).add(m.color.clone().multiplyScalar(0.1)); h.emissiveIntensity = 1; HI.set(m, h); }
     return h;
   }
   function setHi(b, on) {
@@ -1463,7 +1416,6 @@
     st = STATUS_COL[st] ? st : 'ok'; b.status = st;
     var c = C(STATUS_COL[st]);
     b.bulb.material.color.copy(c);
-    b.halo.material.color.set(STATUS_COL[st]);
   }
   function setBadge(id, text) {
     var b = S.buildings[id] || S.endpoints[id]; if (!b) return;
@@ -1475,7 +1427,7 @@
     if (b.badgeText === text && b.badge) return;
     b.badgeText = text;
     if (!b.badge) {
-      b.badge = pillSprite(text, { bg: b.accent, fg: '#ffffff', fs: 24, pad: 15 }, 1.9);
+      b.badge = pillSprite(text, { bg: mixHex(b.accent, '#2b3446', 0.4), fg: '#ffffff', fs: 24, pad: 15 }, 1.9);
       b.badge.position.set(0, b.badgeY, 0); b.group.add(b.badge);
     } else b.badge.userData.setText(text);
   }
@@ -1520,7 +1472,7 @@
    * Team: low-poly accountants who walk the sidewalks
    * ===================================================================== */
   S.team = {}; S.spots = {};
-  var WALK_SPEED = 3.5, SIDEWALK = 2.7, WORK_TIME = 2.0, PERSON_H = 3.45, MAX_QUEUE = 3;
+  var WALK_SPEED = 2.6, SIDEWALK = 2.7, WORK_TIME = 2.0, PERSON_H = 3.45, MAX_QUEUE = 3;
   var WN = { customers: 'AW', vendors: 'AE' };
   // walker node for each location (gates are reached from the avenue node, then a connector)
   function walkNode(id) { return WN[id] || NODE_OF[id]; }
@@ -1582,7 +1534,7 @@
   function docIconCanvas(col) {
     var cv = document.createElement('canvas'); cv.width = cv.height = 128;
     var c = cv.getContext('2d');
-    c.shadowColor = 'rgba(20,30,60,.35)'; c.shadowBlur = 10; c.shadowOffsetY = 3;
+    c.shadowColor = 'rgba(30,38,56,.22)'; c.shadowBlur = 6; c.shadowOffsetY = 2;
     c.fillStyle = col; rr(c, 22, 8, 84, 108, 12); c.fill();
     c.shadowColor = 'transparent';
     c.fillStyle = '#ffffff'; rr(c, 28, 14, 72, 96, 8); c.fill();
@@ -1601,7 +1553,7 @@
   function makePerson(m) {
     var st = styleFor(m.id);
     var root = new T.Group(), body = new T.Group(); root.add(body);
-    var colM = mat(m.color), pants = mat('#2e3a56'), skin = mat(st.skin), hairM = mat(st.hair), shoe = mat('#1d2336'), dark = mat('#1b2236');
+    var colM = mat(m.color), pants = mat('#2e3a56'), skin = mat(st.skin, { raw: true }), hairM = mat(st.hair), shoe = mat('#1d2336'), dark = mat('#1b2236');
     var parts = { root: root, body: body, legs: [], arms: [] };
     // legs (pivot at hip)
     [-1, 1].forEach(function (s) {
@@ -1662,12 +1614,12 @@
     var parts = makePerson(m);
     m.parts = parts; m.root = parts.root;
     m.first = firstName(m.name);
-    m.pill = pillSprite(m.first, { dot: color, fs: 22, pad: 13 }, 2.15);
+    m.pill = pillSprite(m.first, { dot: muteHex(color, 0.25), fs: 24, pad: 13 }, 2.3);
     m.root.add(m.pill);
-    m.doc = docSprite(color); m.doc.visible = false; m.root.add(m.doc);
+    m.doc = docSprite(muteHex(color, 0.25)); m.doc.visible = false; m.root.add(m.doc);
     // highlight rings
-    m.rings = [0, 1].map(function () {
-      var r = new T.Mesh(_ringGeo2(), new T.MeshBasicMaterial({ color: C(color), transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: T.DoubleSide }));
+    m.rings = [0].map(function () {
+      var r = new T.Mesh(_ringGeo2(), new T.MeshBasicMaterial({ color: C(muteHex(color, 0.25)), transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: T.DoubleSide }));
       r.renderOrder = 6; r.visible = false; r.position.y = 0.05; m.root.add(r); return r;
     });
     S.scene.add(m.root);
@@ -1686,7 +1638,7 @@
     if (!text) { clearTask(m); return; }
     if (m.taskSpr && m.taskText === text) return;
     clearTask(m);
-    m.taskSpr = pillSprite(text, { dot: m.color, fs: 20, pad: 12, border: m.color }, 1.75);
+    m.taskSpr = pillSprite(text, { dot: muteHex(m.color, 0.25), fs: 22, pad: 13, border: 'rgba(70,82,104,.38)' }, 2.0);
     m.taskText = text; m.root.add(m.taskSpr);
   }
   function removeMember(m) {
@@ -1778,7 +1730,7 @@
   }
   var _wp = new T.Vector3(), _wp2 = new T.Vector3();
   function legStep(m, j, dt) {
-    var boost = 1 + Math.min(1.2, 0.4 * m.queue.length);
+    var boost = 1 + Math.min(0.5, 0.2 * m.queue.length);
     var base = WALK_SPEED * ((j.opts && j.opts.speed) || 1) * boost;
     var sp = base * Math.min(1, 0.3 + j.s / 1.4, 0.3 + (j.path.L - j.s) / 1.6);
     j.s = Math.min(j.path.L, j.s + sp * dt);
@@ -1799,6 +1751,7 @@
     } else if (j.stage === 'work') {
       m.speedNow = 0;
       var dur = (j.opts.workTime != null ? Number(j.opts.workTime) : WORK_TIME);
+      if (j.opts.label) dur = Math.max(dur, 2.6); // keep the task label on screen long enough to read
       if (j.t === 0 && j.opts.label) showTask(m, j.opts.label);
       j.t += dt;
       // face the building / gate
@@ -1831,17 +1784,17 @@
     P.legs[0].rotation.x = sw; P.legs[1].rotation.x = -sw;
     // arms
     var tgtR, tgtL;
-    if (carrying) { tgtR = -1.15 + Math.sin(m.phase * 2) * 0.04 * m.walkAmp; tgtL = -0.55 + Math.sin(t * 9) * 0.05 * m.workK; if (working) { tgtR = -1.2 + Math.sin(t * 8) * 0.06; tgtL = -1.1 + Math.sin(t * 8 + 1.7) * 0.08; } }
-    else { tgtR = -sw * 0.9 + Math.sin(t * 1.3) * 0.03; tgtL = sw * 0.9 - Math.sin(t * 1.1) * 0.03; if (walking) { tgtR = Math.sin(m.phase + Math.PI) * 0.7; tgtL = Math.sin(m.phase) * 0.7; } }
+    if (carrying) { tgtR = -1.15 + Math.sin(m.phase * 2) * 0.04 * m.walkAmp; tgtL = -0.55; if (working) { tgtR = -1.2 + Math.sin(t * 3) * 0.03; tgtL = -1.1 + Math.sin(t * 3 + 1.7) * 0.04; } }
+    else { tgtR = -sw * 0.9; tgtL = sw * 0.9; if (walking) { tgtR = Math.sin(m.phase + Math.PI) * 0.7; tgtL = Math.sin(m.phase) * 0.7; } }
     m.armR += (tgtR - m.armR) * k8; m.armL += (tgtL - m.armL) * k8;
     P.arms[0].rotation.x = m.armL; P.arms[1].rotation.x = m.armR;
     P.arms[0].rotation.z = 0.06; P.arms[1].rotation.z = -0.06;
     P.prop.visible = carrying;
     // body bob / head
-    var bob = Math.abs(Math.sin(m.phase)) * 0.14 * m.walkAmp + Math.sin(t * 1.9) * 0.025 + (working ? Math.sin(t * 8) * 0.025 : 0);
+    var bob = Math.abs(Math.sin(m.phase)) * 0.09 * m.walkAmp;
     P.body.position.y = bob;
-    P.head.rotation.x = 0.28 * m.workK + (walking ? 0 : Math.sin(t * 0.7) * 0.03);
-    P.head.rotation.y = (1 - m.workK) * (1 - m.walkAmp) * Math.sin(t * 0.55) * 0.5;
+    P.head.rotation.x = 0.2 * m.workK;
+    P.head.rotation.y = (1 - m.workK) * (1 - m.walkAmp) * Math.sin(t * 0.3) * 0.15;
     P.body.rotation.z = Math.sin(m.phase) * 0.05 * m.walkAmp;
     // heading
     m.root.rotation.y = m.yaw;
@@ -1849,18 +1802,18 @@
     P.body.scale.setScalar(pf);
     var H = PERSON_H * pf;
     m.pill.position.set(0, H + 1.15, 0);
-    if (m.taskSpr) { m.taskSpr.position.set(0, H + 3.3, 0); }
+    if (m.taskSpr) { m.taskSpr.position.set(0, H + 3.5, 0); }
     // carried doc icon floats above the pill while walking
     var showDoc = carrying && !working;
     m.doc.visible = showDoc;
-    if (showDoc) m.doc.position.set(0, H + 3.2 + Math.sin(S.t * 3 + m.seed) * 0.12, 0);
+    if (showDoc) m.doc.position.set(0, H + 3.4, 0);
     // highlight rings
     if (m.hl > 0) {
-      m.hl = Math.max(0, m.hl - dt / 1.8);
+      m.hl = Math.max(0, m.hl - dt / 2.6);
       var kk = 1 - m.hl;
-      m.rings.forEach(function (r, i) {
-        var q = clamp((kk - i * 0.25) / 0.75, 0, 1);
-        r.visible = q > 0 && q < 1; r.scale.setScalar(1.0 + q * 3.4); r.material.opacity = (1 - q) * 0.95;
+      m.rings.forEach(function (r) {
+        var q = clamp(kk, 0, 1);
+        r.visible = q > 0 && q < 1; r.scale.setScalar(1.0 + q * 1.8); r.material.opacity = (1 - q) * 0.4;
       });
       m.pill.material.opacity = 1;
     } else if (m.rings[0].visible) m.rings.forEach(function (r) { r.visible = false; });
@@ -2006,16 +1959,11 @@
       var b = S.buildings[id];
       var th = (S.hovered === id ? 0.95 : 0) + (S.selected === id ? 1 : 0);
       b.hover += (Math.min(1, th) - b.hover) * Math.min(1, rawDt * 10);
-      b.flash = Math.max(0, b.flash - rawDt * 0.9);
-      b.outline.material.opacity = clamp(b.hover * 0.95 + b.flash * 0.9, 0, 1);
-      var pulseK = b.status === 'ok' ? 1 : (0.55 + 0.45 * Math.sin(S.t * (b.status === 'alert' ? 8 : 4.5)));
-      b.halo.material.opacity = (b.status === 'ok' ? 0.5 : 0.85) * pulseK;
-      var sc = b.status === 'ok' ? 3.0 : 3.4 + 1.0 * (1 - pulseK);
-      b.halo.scale.set(sc, sc, 1);
-      b.bulb.scale.setScalar(b.status === 'ok' ? 1 : 0.9 + 0.25 * pulseK);
+      b.flash = Math.max(0, b.flash - rawDt / PULSE_DUR);
+      var fl = b.flash * b.flash * (3 - 2 * b.flash); // smooth fade
+      b.outline.material.opacity = clamp(Math.max(b.hover * 0.5, fl * PULSE_MAX), 0, 1);
+      b.bulb.scale.setScalar(b.status === 'ok' ? 0.8 : 1);
     }
-    // LED blink
-    if (S.leds) { S.leds[0].emissiveIntensity = 0.6 + 0.4 * Math.sin(S.t * 5); S.leds[1].emissiveIntensity = 0.6 + 0.4 * Math.sin(S.t * 3.1 + 1.3); S.leds[2].emissiveIntensity = 0.5 + 0.5 * Math.sin(S.t * 7 + 2); }
     // label scaling vs camera distance
     var dist = S.camera.position.distanceTo(tg), f = Math.pow(dist / 150, 0.55);
     for (var j = 0; j < S.labels.length; j++) {
@@ -2039,9 +1987,9 @@
       if (!renderer || !renderer.getContext || !renderer.getContext()) return false;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.outputEncoding = T.sRGBEncoding;
-      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12;
+      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
       renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
-      renderer.setClearColor(new T.Color('#e6edf7'), 1);
+      renderer.setClearColor(new T.Color('#e7e6e3'), 1);
       S.renderer = renderer; S.dom = renderer.domElement;
       S.dom.style.display = 'block'; S.dom.style.width = '100%'; S.dom.style.height = '100%'; S.dom.style.touchAction = 'none';
       S.dom.style.outline = 'none';
@@ -2049,7 +1997,7 @@
       containerEl.insertBefore(S.dom, containerEl.firstChild);
 
       var scene = (S.scene = new T.Scene());
-      scene.background = new T.Color('#e6edf7');
+      scene.background = new T.Color('#e7e6e3');
       S.clock = new T.Clock();
       S.ray = new T.Raycaster();
       S.target = new T.Vector3(TARGET0[0], TARGET0[1], TARGET0[2]);
@@ -2059,8 +2007,8 @@
       renderer.setSize(w, h, true);
 
       // lights
-      scene.add(new T.HemisphereLight(0xffffff, 0xc4d2ea, 0.62));
-      var sun = new T.DirectionalLight(0xfff2de, 1.15);
+      scene.add(new T.HemisphereLight(0xffffff, 0xd2d1ce, 0.85));
+      var sun = new T.DirectionalLight(0xfff6ea, 0.78);
       sun.position.set(-52, 90, 36); sun.target.position.set(0, 0, 0);
       sun.castShadow = true;
       var ms = Math.min(4096, renderer.capabilities.maxTextureSize || 2048);

@@ -95,29 +95,29 @@
 
   /* ------------------------------------------------------------- building meta */
   const B = {
-    sales: { color: '#2f6bff', icon: 'receipt' },
-    procure: { color: '#8b5cf6', icon: 'truck' },
-    warehouse: { color: '#f59e0b', icon: 'box' },
-    bank: { color: '#10b981', icon: 'bank' },
-    payroll: { color: '#ec4899', icon: 'users' },
-    ledger: { color: '#0ea5e9', icon: 'book' },
-    reporting: { color: '#6366f1', icon: 'chart' },
+    sales: { color: '#5b78a6', icon: 'receipt' },
+    procure: { color: '#8a76a8', icon: 'truck' },
+    warehouse: { color: '#b8935a', icon: 'box' },
+    bank: { color: '#5f9a82', icon: 'bank' },
+    payroll: { color: '#b07f94', icon: 'users' },
+    ledger: { color: '#5f9ba3', icon: 'book' },
+    reporting: { color: '#7a8798', icon: 'chart' },
   };
   const BIDS = Object.keys(B);
   const bName = (id) => (B[id] ? t('b.' + id + '.name') : id);
   const bProc = (id) => (B[id] ? t('b.' + id + '.proc') : '');
-  const bColor = (id) => (B[id] ? B[id].color : '#7482a0');
+  const bColor = (id) => (B[id] ? B[id].color : '#6b7280');
   const STATUS_CLS = { ok: 'ok', warn: 'warn', alert: 'bad' };
   const ROLE_N = 5;
 
   const TEAM_DEF = [
-    { id: 'elena', home: 'ledger', color: '#0ea5e9' },
-    { id: 'maria', home: 'sales', color: '#2f6bff' },
-    { id: 'georgi', home: 'procure', color: '#8b5cf6' },
-    { id: 'ivan', home: 'warehouse', color: '#f59e0b' },
-    { id: 'ana', home: 'bank', color: '#10b981' },
-    { id: 'nikolai', home: 'payroll', color: '#ec4899' },
-    { id: 'desi', home: 'reporting', color: '#6366f1' },
+    { id: 'elena', home: 'ledger', color: '#5f9ba3' },
+    { id: 'maria', home: 'sales', color: '#5b78a6' },
+    { id: 'georgi', home: 'procure', color: '#8a76a8' },
+    { id: 'ivan', home: 'warehouse', color: '#b8935a' },
+    { id: 'ana', home: 'bank', color: '#5f9a82' },
+    { id: 'nikolai', home: 'payroll', color: '#b07f94' },
+    { id: 'desi', home: 'reporting', color: '#7a8798' },
   ];
 
   /* ------------------------------------------------------------------- state */
@@ -196,7 +196,7 @@
   function toast(kind, title, body, ms) {
     const root = $('#toasts');
     if (!root) return;
-    while (root.children.length >= 3) root.firstElementChild.remove();
+    while (root.children.length >= 2) root.firstElementChild.remove();
     const el = doc.createElement('div');
     el.className = 'toast ' + kind;
     el.setAttribute('role', kind === 'alert' ? 'alert' : 'status');
@@ -217,10 +217,10 @@
 
   /* ================================================================ KPI cards */
   const KPIS = [
-    { id: 'cash', icon: 'wallet', color: '#10b981', good: 1, get: (m) => m.cash, fmt: (v) => money(v), sub: (m) => t('kpi.sub.wc', { v: moneyK(m.workingCapital) }) },
-    { id: 'ar', icon: 'receipt', color: '#2f6bff', good: -1, get: (m) => m.ar, fmt: (v) => money(v), sub: (m) => t('kpi.sub.dso', { n: Math.round(num(m.dso)) }) },
-    { id: 'ni', icon: 'chart', color: '#8b5cf6', good: 1, abs: true, get: (m) => m.netIncome, fmt: (v) => money(v), sub: (m) => t('kpi.sub.gm', { v: pct(m.grossMarginPct) }) },
-    { id: 'cr', icon: 'scale', color: '#f59e0b', good: 1, get: (m) => m.currentRatio, fmt: (v) => I.fmtNum(num(v), 2) + 'x', sub: (m) => t('kpi.sub.dpo', { n: Math.round(num(m.dpo)) }) },
+    { id: 'cash', icon: 'wallet', color: '#5f9a82', good: 1, get: (m) => m.cash, fmt: (v) => money(v), sub: (m) => t('kpi.sub.wc', { v: moneyK(m.workingCapital) }) },
+    { id: 'ar', icon: 'receipt', color: '#5b78a6', good: -1, get: (m) => m.ar, fmt: (v) => money(v), sub: (m) => t('kpi.sub.dso', { n: Math.round(num(m.dso)) }) },
+    { id: 'ni', icon: 'chart', color: '#8a76a8', good: 1, abs: true, get: (m) => m.netIncome, fmt: (v) => money(v), sub: (m) => t('kpi.sub.gm', { v: pct(m.grossMarginPct) }) },
+    { id: 'cr', icon: 'scale', color: '#b8935a', good: 1, get: (m) => m.currentRatio, fmt: (v) => I.fmtNum(num(v), 2) + 'x', sub: (m) => t('kpi.sub.dpo', { n: Math.round(num(m.dpo)) }) },
   ];
 
   function buildKpis() {
@@ -245,9 +245,9 @@
     node._val = to;
     cancelAnimationFrame(node._raf);
     if (reduceMotion || instant || from === to) { node.textContent = fmt(to); return; }
-    const t0 = performance.now(), dur = 900;
+    const t0 = performance.now(), dur = 1400;
     const step = (ts) => {
-      const k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      const k = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - k, 2);
       node.textContent = fmt(from + (to - from) * e);
       if (k < 1) node._raf = requestAnimationFrame(step);
     };
@@ -259,10 +259,8 @@
     const w = 96, h = 32, min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), rng = max - min || 1;
     const pts = vals.map((v, i) => [(i / (vals.length - 1)) * w, h - 3 - ((v - min) / rng) * (h - 8)]);
     const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-    const id = 'sg' + color.replace('#', '');
     return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-      <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
-      <path d="${line} L${w} ${h} L0 ${h} Z" fill="url(#${id})"/><path d="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
+      <path d="${line}" fill="none" stroke="#8d9bb0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
   }
 
   function updateKpis(m, relang) {
@@ -371,7 +369,7 @@
       summary = `<div class="step-summary">
         <div class="ss-main">
           <span class="label">${esc(t('close.current', { i: idx, n: steps.length }))}</span>
-          <div class="ss-title">${esc(stepTitle(cur))} <span class="chip nodot" style="background:color-mix(in srgb, ${bColor(cur.building)} 14%, white);color:${bColor(cur.building)}">${esc(bName(cur.building))}</span></div>
+          <div class="ss-title">${esc(stepTitle(cur))} <span class="chip nodot" style="background:color-mix(in srgb, ${bColor(cur.building)} 14%, white);color:color-mix(in srgb, ${bColor(cur.building)} 55%, #20242c)">${esc(bName(cur.building))}</span></div>
           <p>${esc(sc ? sc.prompt : t('close.fallbackPrompt'))}</p>
         </div>
         <button type="button" class="btn primary" data-step="${esc(cur.id)}" data-demo="close-start">${esc(t('close.start'))} ${icon('arrowRight', 14)}</button></div>`;
@@ -696,7 +694,7 @@
     const root = $('#modalRoot');
     const wrap = doc.createElement('div');
     wrap.className = 'modal-backdrop';
-    wrap.innerHTML = `<div class="modal ${cls || ''}" role="dialog" aria-modal="true" data-demo="modal" style="--acc:${accent || '#2f6bff'}">${html}</div>`;
+    wrap.innerHTML = `<div class="modal ${cls || ''}" role="dialog" aria-modal="true" data-demo="modal" style="--acc:${accent || '#3b5b8c'}">${html}</div>`;
     root.appendChild(wrap);
     hydrate(wrap);
     applyI18n(wrap);
@@ -726,7 +724,7 @@
       <div class="m-head"><div class="m-badge">${icon((B[e.process] || {}).icon || 'book', 22)}</div>
         <div class="m-titles"><div class="eyebrow">${esc(t('je.eyebrow'))} · ${esc(I.fmtDate(e.date || ''))}</div><h2 id="mTitle">${esc(e.id)} <span style="font-weight:500;color:var(--muted)">${esc(e.memo)}</span></h2></div>
         <button type="button" class="icon-btn" data-close data-demo="modal-close" aria-label="${esc(t('common.close'))}">${icon('x', 18)}</button></div>
-      <div style="display:flex;gap:8px;margin-bottom:6px"><span class="chip nodot" style="background:color-mix(in srgb, ${bColor(e.process)} 14%, white);color:${bColor(e.process)}">${esc(bName(e.process))}</span>${isAuto(e) ? '<span class="chip auto">' + esc(t('tbl.auto')) + '</span>' : ''}</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px"><span class="chip nodot" style="background:color-mix(in srgb, ${bColor(e.process)} 14%, white);color:color-mix(in srgb, ${bColor(e.process)} 55%, #20242c)">${esc(bName(e.process))}</span>${isAuto(e) ? '<span class="chip auto">' + esc(t('tbl.auto')) + '</span>' : ''}</div>
       <table class="detail-tbl"><thead><tr><th>${esc(t('tbl.account'))}</th><th class="r">${esc(t('tbl.debit'))}</th><th class="r">${esc(t('tbl.credit'))}</th></tr></thead><tbody>${(e.lines || []).map((l) =>
         `<tr><td>${esc(l.acct)} &middot; ${esc((accounts[l.acct] || {}).name || '')}</td><td class="r">${l.dr ? money(l.dr, true) : ''}</td><td class="r">${l.cr ? money(l.cr, true) : ''}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td>${esc(t('tbl.total'))}</td><td class="r">${money(sum(e.lines || [], 'dr'), true)}</td><td class="r">${money(sum(e.lines || [], 'cr'), true)}</td></tr></tfoot></table>
@@ -768,7 +766,7 @@
         <div class="grp"><button type="button" class="btn ghost" id="hintBtn" data-demo="hint">${icon('bulb', 15)} <span data-i18n="pm.hint"></span></button><button type="button" class="btn ghost" id="ansBtn" data-demo="show-answer">${icon('eye', 15)} <span data-i18n="pm.showAnswer"></span></button></div>
         <div class="grp"><button type="button" class="btn" id="nextBtn" data-demo="next" data-i18n="pm.next"></button><button type="button" class="btn primary" id="checkBtn" data-demo="check">${icon('check', 15)} <span data-i18n="pm.check"></span></button></div>
       </div>
-      <div class="confetti" id="confetti"></div>`, '', acc, opts.prevFocus);
+      `, '', acc, opts.prevFocus);
 
     modal.setAttribute('aria-labelledby', 'mTitle');
     const st = { attempts: 0, solved: false, busy: false, hintOn: false, ansOn: false, fb: null };
@@ -933,17 +931,6 @@
 
     const shake = () => { modal.classList.remove('shake'); void modal.offsetWidth; modal.classList.add('shake'); };
 
-    function confetti() {
-      if (reduceMotion) return;
-      const box = $('#confetti', modal), colors = ['#2f6bff', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#0ea5e9'];
-      let h = '';
-      for (let i = 0; i < 42; i++) {
-        const a = Math.random() * Math.PI * 2, d = 120 + Math.random() * 260;
-        h += `<i style="--cc:${colors[i % colors.length]};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d - 60}px;--rot:${Math.random() * 720 - 360}deg;animation-delay:${Math.random() * 0.12}s"></i>`;
-      }
-      box.innerHTML = h;
-    }
-
     function check() {
       if (st.solved || st.busy) return;
       const sc = cur();
@@ -957,7 +944,6 @@
         setFb('ok', () => icon('check', 16) + '<span>' + esc(t('pm.correctPosting')) + '</span>');
         $$('input,button', rowsEl).forEach((n) => (n.disabled = true));
         $('#checkBtn', modal).disabled = true;
-        confetti();
         const delta = num(sc.xp);
         toast('success', t('pm.correctToast', { n: delta }), sc.explanation || t('pm.postedToast'), 7000);
         completeStepFor(sc.id);
@@ -1081,7 +1067,7 @@
     items.forEach((it, i) => {
       if (it.g !== last) { h += `<div class="sr-group label">${esc(it.g)}</div>`; last = it.g; }
       h += `<button type="button" class="sr-item ${i === searchState.active ? 'active' : ''}" role="option" data-i="${i}">
-        <span class="sr-ic" style="${it.color ? 'color:' + it.color : ''}">${icon(it.ic, 15)}</span><span class="sr-t"><b>${esc(it.t)}</b><small>${esc(it.s)}</small></span></button>`;
+        <span class="sr-ic" style="${it.color ? 'color:color-mix(in srgb, ' + it.color + ' 60%, #20242c)' : ''}">${icon(it.ic, 15)}</span><span class="sr-t"><b>${esc(it.t)}</b><small>${esc(it.s)}</small></span></button>`;
     });
     box.innerHTML = h || '<div class="sr-empty">' + esc(t('search.none', { q })) + '</div>';
     box.hidden = false;
@@ -1132,13 +1118,13 @@
     }
     S.flashId = entry.id;
     if (S.tab === 'journal') renderTable();
-    setTimeout(() => { if (S.flashId === entry.id) S.flashId = null; }, 2600);
+    setTimeout(() => { if (S.flashId === entry.id) S.flashId = null; }, 2000);
     if (S.selected) renderInspector();
     if (p.auto) {
       const now = Date.now();
-      if (now - S.lastAutoToast > 10000) {
+      if (now - S.lastAutoToast > 20000) {
         S.lastAutoToast = now;
-        toast('info', t('toast.autoPosted', { id: entry.id }), (entry.memo || '') + ' · ' + money(entryTotal(entry)), 4200);
+        toast('info', t('toast.autoPosted', { id: entry.id }), (entry.memo || '') + ' · ' + money(entryTotal(entry)), 3600);
       }
     }
   }

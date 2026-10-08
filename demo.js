@@ -494,7 +494,7 @@
     els.cursor.classList.add('on');
     var dx0 = t0.x - fx, dy0 = t0.y - fy;
     var dist = Math.sqrt(dx0 * dx0 + dy0 * dy0);
-    var dur = o.ms || clamp(520 + dist * 0.55, 650, 1100) * (0.92 + Math.random() * 0.16);
+    var dur = o.ms || clamp(700 + dist * 0.6, 850, 1400) * (0.95 + Math.random() * 0.1);
     var side = Math.random() < .5 ? -1 : 1;
     var bend = o.straight ? 0 : clamp(dist * 0.16, 12, 120) * side;
     await sleep(dur, function (p) {

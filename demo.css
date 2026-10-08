@@ -190,3 +190,24 @@
 #lw-demo-confirm button:focus-visible { outline: 2px solid #2f6bff; outline-offset: 2px; }
 @keyframes ldcFade { from { opacity: 0; } }
 @keyframes ldcPop { from { opacity: 0; transform: scale(.96) translateY(6px); } }
+
+/* ---------- calm overrides (client feedback: fewer glowing / pulsing effects) ---------- */
+:root { --ld-yellow: #c99a2e; --ld-blue: #3b5b8c; }
+#lw-demo-cursor .ld-halo {
+  left: -18px; top: -18px; width: 36px; height: 36px;
+  border: 2px solid rgba(201, 154, 46, .85);
+  background: rgba(201, 154, 46, .10);
+  box-shadow: 0 0 0 1px rgba(11, 16, 32, .25);
+  animation: none;
+}
+.lw-demo-ripple {
+  border: 2px solid rgba(201, 154, 46, .8); background: transparent; box-shadow: none;
+  animation: ld-ripple-calm 1s ease-out forwards;
+}
+.lw-demo-ripple.b { display: none; }
+@keyframes ld-ripple-calm { 0% { transform: scale(.6); opacity: .8; } 100% { transform: scale(2.6); opacity: 0; } }
+#lw-demo-spot { border: 2px solid rgba(59, 91, 140, .75); box-shadow: 0 0 0 4px rgba(59, 91, 140, .10); }
+#lw-demo-spot.on { animation: none; }
+#lw-demo-keys { border: 1px solid #3a3f4a; box-shadow: 0 4px 12px rgba(0, 0, 0, .2); }
+#lw-demo-keys i { animation: none; }
+#lw-demo-bar .ld-dot { background: #b4534b; animation: none; }

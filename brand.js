@@ -6,8 +6,6 @@
 
   var SITE = 'https://emerant.net/';
   var UTM = '?utm_source=ledgerworks&utm_medium=demo&utm_campaign=built_by';
-  var SEEN_KEY = 'lw-emerant-promo-seen';
-  var WELCOME_KEY = 'lw-welcome-seen';
 
   var TXT = {
     builtBy: { en: 'Built by', bg: 'Създадено от' },
@@ -79,11 +77,20 @@
     return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[k] + '</svg>';
   }
 
+  // Nothing is persisted: the welcome opens on every page load. The only exception
+  // is the tour's own Restart (?demo=1); that flag is dropped from the URL right away
+  // so a later refresh shows the welcome again.
   function shouldWelcome() {
-    var p = null;
-    try { p = new URLSearchParams(location.search).get('demo'); } catch (e) { /* noop */ }
-    if (p === '0' || p === '1') return false;          // explicit tour links / restarts skip it
-    try { return sessionStorage.getItem(WELCOME_KEY) !== '1'; } catch (e2) { return true; }
+    var restart = false;
+    try {
+      var u = new URL(location.href);
+      if (u.searchParams.get('demo') === '1') {
+        restart = true;
+        u.searchParams.delete('demo');
+        history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+      }
+    } catch (e) { /* noop */ }
+    return !restart;
   }
 
   function buildWelcome() {
@@ -142,7 +149,6 @@
     if (!welcome.open) return;
     welcome.open = false;
     LW.brand.choice = choice === 'explore' ? 'explore' : 'tour';
-    try { sessionStorage.setItem(WELCOME_KEY, '1'); } catch (e) { /* noop */ }
     if (els.welcome) {
       els.welcome.classList.add('em-out');
       var w = els.welcome;
@@ -214,12 +220,14 @@
     els.card.hidden = false;
     // restart entry animation
     els.card.classList.remove('em-in'); void els.card.offsetWidth; els.card.classList.add('em-in');
-    try { sessionStorage.setItem(SEEN_KEY, '1'); } catch (e) { /* storage unavailable */ }
+    promoSeen = true;
     try { if (window.umami && typeof window.umami.track === 'function') window.umami.track('emerant-promo-shown'); } catch (e2) { /* noop */ }
   }
   function hide() { if (els.card) els.card.hidden = true; }
 
-  function seen() { try { return sessionStorage.getItem(SEEN_KEY) === '1'; } catch (e) { return false; } }
+  // in-memory only, resets on every page load
+  var promoSeen = false;
+  function seen() { return promoSeen; }
 
   // Show the promo once per session when the guided tour finishes or is exited
   function watchTour() {
@@ -235,7 +243,18 @@
     }, 800);
   }
 
+  // Earlier versions remembered language / welcome / promo in browser storage.
+  // The app is stateless now, so clear those leftovers for returning visitors.
+  function clearLegacyState() {
+    try { localStorage.removeItem('lw-lang'); } catch (e) { /* noop */ }
+    try {
+      sessionStorage.removeItem('lw-welcome-seen');
+      sessionStorage.removeItem('lw-emerant-promo-seen');
+    } catch (e2) { /* noop */ }
+  }
+
   function init() {
+    clearLegacyState();
     try {
       if (shouldWelcome()) buildWelcome();
       build();
