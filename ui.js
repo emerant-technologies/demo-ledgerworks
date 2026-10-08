@@ -75,6 +75,7 @@
     percent: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>',
     scale: '<path d="M12 3v18M5 21h14M6 7h12"/><path d="m6 7-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',
     layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+    cards: '<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="11" width="8" height="10" rx="2"/><rect x="3" y="14" width="8" height="7" rx="2"/>',
     plusCircle: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
   };
   const icon = (name, size) =>
@@ -95,13 +96,13 @@
 
   /* ------------------------------------------------------------- building meta */
   const B = {
-    sales: { color: '#5b78a6', icon: 'receipt' },
-    procure: { color: '#8a76a8', icon: 'truck' },
-    warehouse: { color: '#b8935a', icon: 'box' },
-    bank: { color: '#5f9a82', icon: 'bank' },
-    payroll: { color: '#b07f94', icon: 'users' },
-    ledger: { color: '#5f9ba3', icon: 'book' },
-    reporting: { color: '#7a8798', icon: 'chart' },
+    sales: { color: '#4071e7', icon: 'receipt' },
+    procure: { color: '#8865e0', icon: 'truck' },
+    warehouse: { color: '#db9829', icon: 'box' },
+    bank: { color: '#28ad85', icon: 'bank' },
+    payroll: { color: '#d45597', icon: 'users' },
+    ledger: { color: '#269ed6', icon: 'book' },
+    reporting: { color: '#696ddc', icon: 'chart' },
   };
   const BIDS = Object.keys(B);
   const bName = (id) => (B[id] ? t('b.' + id + '.name') : id);
@@ -111,13 +112,13 @@
   const ROLE_N = 5;
 
   const TEAM_DEF = [
-    { id: 'elena', home: 'ledger', color: '#5f9ba3' },
-    { id: 'maria', home: 'sales', color: '#5b78a6' },
-    { id: 'georgi', home: 'procure', color: '#8a76a8' },
-    { id: 'ivan', home: 'warehouse', color: '#b8935a' },
-    { id: 'ana', home: 'bank', color: '#5f9a82' },
-    { id: 'nikolai', home: 'payroll', color: '#b07f94' },
-    { id: 'desi', home: 'reporting', color: '#7a8798' },
+    { id: 'elena', home: 'ledger', color: '#269ed6' },
+    { id: 'maria', home: 'sales', color: '#4071e7' },
+    { id: 'georgi', home: 'procure', color: '#8865e0' },
+    { id: 'ivan', home: 'warehouse', color: '#db9829' },
+    { id: 'ana', home: 'bank', color: '#28ad85' },
+    { id: 'nikolai', home: 'payroll', color: '#d45597' },
+    { id: 'desi', home: 'reporting', color: '#696ddc' },
   ];
 
   /* ------------------------------------------------------------------- state */
@@ -217,10 +218,10 @@
 
   /* ================================================================ KPI cards */
   const KPIS = [
-    { id: 'cash', icon: 'wallet', color: '#5f9a82', good: 1, get: (m) => m.cash, fmt: (v) => money(v), sub: (m) => t('kpi.sub.wc', { v: moneyK(m.workingCapital) }) },
-    { id: 'ar', icon: 'receipt', color: '#5b78a6', good: -1, get: (m) => m.ar, fmt: (v) => money(v), sub: (m) => t('kpi.sub.dso', { n: Math.round(num(m.dso)) }) },
-    { id: 'ni', icon: 'chart', color: '#8a76a8', good: 1, abs: true, get: (m) => m.netIncome, fmt: (v) => money(v), sub: (m) => t('kpi.sub.gm', { v: pct(m.grossMarginPct) }) },
-    { id: 'cr', icon: 'scale', color: '#b8935a', good: 1, get: (m) => m.currentRatio, fmt: (v) => I.fmtNum(num(v), 2) + 'x', sub: (m) => t('kpi.sub.dpo', { n: Math.round(num(m.dpo)) }) },
+    { id: 'cash', icon: 'wallet', color: '#28ad85', good: 1, get: (m) => m.cash, fmt: (v) => money(v), sub: (m) => t('kpi.sub.wc', { v: moneyK(m.workingCapital) }) },
+    { id: 'ar', icon: 'receipt', color: '#4071e7', good: -1, get: (m) => m.ar, fmt: (v) => money(v), sub: (m) => t('kpi.sub.dso', { n: Math.round(num(m.dso)) }) },
+    { id: 'ni', icon: 'chart', color: '#8865e0', good: 1, abs: true, get: (m) => m.netIncome, fmt: (v) => money(v), sub: (m) => t('kpi.sub.gm', { v: pct(m.grossMarginPct) }) },
+    { id: 'cr', icon: 'scale', color: '#db9829', good: 1, get: (m) => m.currentRatio, fmt: (v) => I.fmtNum(num(v), 2) + 'x', sub: (m) => t('kpi.sub.dpo', { n: Math.round(num(m.dpo)) }) },
   ];
 
   function buildKpis() {
@@ -254,13 +255,20 @@
     node._raf = requestAnimationFrame(step);
   }
 
-  function sparkSvg(vals, color) {
+  // Small area chart: gradient fill (accent, ~25% -> 3%), 2px accent line, dot on the last point.
+  function sparkSvg(vals, color, id) {
     if (vals.length < 2) return '';
-    const w = 96, h = 32, min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), rng = max - min || 1;
-    const pts = vals.map((v, i) => [(i / (vals.length - 1)) * w, h - 3 - ((v - min) / rng) * (h - 8)]);
-    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const w = 100, h = 40, xr = 96, top = 6, bot = 33;
+    const min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), rng = max - min;
+    const pts = vals.map((v, i) => [(i / (vals.length - 1)) * xr, rng > 0 ? bot - ((v - min) / rng) * (bot - top) : (top + bot) / 2 + 4]);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' ');
+    const area = line + ' L' + xr + ' ' + h + ' L0 ' + h + ' Z';
+    const last = pts[pts.length - 1], gid = 'spg-' + id;
     return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-      <path d="${line}" fill="none" stroke="#8d9bb0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".30"/><stop offset="1" stop-color="${color}" stop-opacity=".04"/></linearGradient></defs>
+      <path d="${area}" fill="url(#${gid})" stroke="none"/>
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>` +
+      `<i class="spark-dot" style="left:${(last[0] / w) * 100}%;top:${(last[1] / h) * 100}%"></i>`;
   }
 
   function updateKpis(m, relang) {
@@ -289,11 +297,11 @@
         s.push(cur);
         if (s.length > 32) s.shift();
       }
-      $('.spark', card).innerHTML = sparkSvg(S.series[k.id], k.color);
+      $('.spark', card).innerHTML = sparkSvg(S.series[k.id], k.color, k.id);
     });
   }
 
-  /* ==================================================================== badges */
+  /* ==================================================================== badges (fallback text only) */
   function updateBadges(m) {
     const tx = {
       sales: t('badge.ar') + ' ' + moneyK(m.ar),
@@ -302,9 +310,8 @@
       warehouse: t('badge.inv') + ' ' + moneyK(m.inventory),
       ledger: t('badge.ni') + ' ' + moneyK(m.netIncome),
     };
-    Object.keys(tx).forEach((id) => {
-      if (S.badges[id] !== tx[id]) { S.badges[id] = tx[id]; W('setBadge', id, tx[id]); }
-    });
+    // text kept only for the no-WebGL fallback cards; the 3D world no longer draws money badges
+    Object.keys(tx).forEach((id) => { S.badges[id] = tx[id]; });
   }
 
   /* ================================================================ XP / level */
@@ -564,6 +571,7 @@
     if (id && !B[id]) id = null;
     S.selected = id || null;
     renderInspector();
+    BIDS.forEach((b) => { if (MC.cards[b]) MC.cards[b].classList.toggle('sel', b === S.selected); });
     if (id) {
       if (opts.focus) W('focus', id);
       if (opts.pulse) W('pulse', id, bColor(id));
@@ -694,7 +702,7 @@
     const root = $('#modalRoot');
     const wrap = doc.createElement('div');
     wrap.className = 'modal-backdrop';
-    wrap.innerHTML = `<div class="modal ${cls || ''}" role="dialog" aria-modal="true" data-demo="modal" style="--acc:${accent || '#3b5b8c'}">${html}</div>`;
+    wrap.innerHTML = `<div class="modal ${cls || ''}" role="dialog" aria-modal="true" data-demo="modal" style="--acc:${accent || '#2f5fb3'}">${html}</div>`;
     root.appendChild(wrap);
     hydrate(wrap);
     applyI18n(wrap);
@@ -1092,6 +1100,222 @@
     else if (it.type === 'scenario') openPractice(findScenario(it.id));
   }
 
+  /* ============================================================ Map mini-dashboards */
+  // One compact HTML card per building, pinned just below its 3D name label.
+  const MC = { el: null, cards: {}, on: true, hid: {}, dims: {}, frame: 0, panels: [], last: 0, timer: 0, ready: false };
+  const MC_PANELS = ['.topbar', '#kpis', '#mapctl', '#teamPanel', '#inspector.open', '#closePanel', '#tablePanel'];
+
+  function mcRows(id, m) {
+    const ar = safe(() => E.arAging(), []), ap = safe(() => E.apDue(), []);
+    const jr = E.journal || [];
+    const days = (v) => t('u.days', { n: Math.round(num(v)) });
+    const x2 = (v) => I.fmtNum(num(v), 2) + 'x';
+    switch (id) {
+      case 'sales':
+        return [['mc.revMtd', money(m.revenue)], ['mc.openInv', String(ar.length)], ['mc.dso', days(m.dso)]];
+      case 'procure': {
+        const soon = ap.filter((r) => num(r.dueInDays) <= 7).length;
+        return [['mc.ap', money(m.ap)], ['mc.due7', String(soon), soon ? 'warn' : ''], ['mc.dpo', days(m.dpo)]];
+      }
+      case 'warehouse':
+        return [['mc.inv', money(m.inventory)], ['mc.cogs', money(m.cogs)], ['mc.gm', pct(m.grossMarginPct)]];
+      case 'bank': {
+        let latest = '';
+        jr.forEach((e) => { if (e.date && e.date > latest) latest = e.date; });
+        let rec = 0;
+        jr.forEach((e) => { if (e.date === latest) (e.lines || []).forEach((l) => { if (l.acct === '1000') rec += num(l.dr); }); });
+        const third = rec > 0 ? ['mc.receipts', money(rec)] : ['mc.wc', money(m.workingCapital)];
+        return [['mc.cash', money(m.cash)], ['mc.cr', x2(m.currentRatio), num(m.currentRatio) < 1 ? 'bad' : ''], third];
+      }
+      case 'payroll': {
+        const ratio = num(m.revenue) > 0 ? (bal('6000') / num(m.revenue)) * 100 : 0;
+        return [['mc.wages', money(bal('6000'))], ['mc.accrued', money(bal('2150'))], ['mc.payRev', pct(ratio)]];
+      }
+      case 'ledger': {
+        const ok = m.trialBalanceOk !== false, last = jr[jr.length - 1];
+        return [['mc.posted', String(jr.length)], ['mc.tb', ok ? t('mc.balanced') : t('mc.unbalanced'), ok ? 'ok' : 'bad'], ['mc.lastJe', last ? String(last.id) : '-']];
+      }
+      case 'reporting': {
+        const steps = E.closeSteps || [];
+        return [['mc.close', steps.filter((s) => s.done).length + '/' + steps.length], ['mc.ni', money(m.netIncome)], ['mc.rev', money(m.revenue)]];
+      }
+    }
+    return [];
+  }
+
+  function mcBuild() {
+    if (MC.ready) return;
+    let el = $('#mapCards');
+    if (!el) { el = doc.createElement('div'); el.id = 'mapCards'; $('#ui').appendChild(el); }
+    el.setAttribute('aria-label', 'Building dashboards');
+    el.innerHTML = BIDS.map((id) => `
+      <div class="mcard off" role="button" tabindex="0" data-b="${id}" style="--acc:${B[id].color}">
+        <div class="mc-head"><span class="mc-ic">${icon(B[id].icon, 12)}</span><b data-n></b></div>
+        <div data-rows></div>
+        <div class="mc-who"><i class="mc-av" data-av></i><span data-w></span></div>
+      </div>`).join('');
+    MC.el = el;
+    BIDS.forEach((id) => { MC.cards[id] = $('.mcard[data-b="' + id + '"]', el); });
+    el.addEventListener('click', (e) => { const c = e.target.closest('.mcard'); if (c) selectBuilding(c.dataset.b); });
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const c = e.target.closest('.mcard'); if (!c) return;
+      e.preventDefault(); selectBuilding(c.dataset.b);
+    });
+    // keep mouse-wheel zoom working when the pointer is over a card
+    el.addEventListener('wheel', (e) => {
+      const cv = $('#world canvas'); if (!cv) return;
+      e.preventDefault();
+      cv.dispatchEvent(new WheelEvent('wheel', { deltaX: e.deltaX, deltaY: e.deltaY, deltaMode: e.deltaMode, clientX: e.clientX, clientY: e.clientY, bubbles: true, cancelable: true }));
+    }, { passive: false });
+    MC.ready = true;
+  }
+
+  function mcUpdate() {
+    if (!MC.ready || !E) return;
+    const m = S.metrics || getMetrics();
+    BIDS.forEach((id) => {
+      const c = MC.cards[id]; if (!c) return;
+      const nm = t('mc.name.' + id);
+      const nEl = $('[data-n]', c);
+      if (nEl.textContent !== nm) nEl.textContent = nm;
+      c.setAttribute('aria-label', t('mc.open', { b: bName(id) }));
+      $('[data-rows]', c).innerHTML = mcRows(id, m)
+        .map((r) => `<div class="mc-row"><span title="${esc(t(r[0]))}">${esc(t(r[0]))}</span><b class="${r[2] || ''}">${esc(r[1])}</b></div>`).join('');
+      const own = teamList().filter((x) => x.home === id)[0];
+      const who = $('.mc-who', c), w = $('[data-w]', c), av = $('[data-av]', c);
+      if (own) {
+        const busy = own.status && own.status !== 'idle' && own.task;
+        const txt = busy ? own.task : t('mc.idle');
+        av.style.setProperty('--mc', own.color || '#2f5fb3');
+        av.textContent = initials(own.name).charAt(0);
+        w.textContent = txt; w.title = own.name + ': ' + txt;
+        who.classList.toggle('busy', !!busy);
+        who.hidden = false;
+      } else who.hidden = true;
+      c.classList.toggle('sel', S.selected === id);
+      // measure the compact size, even if the card is currently expanded by hover/selection
+      const wasSel = c.classList.contains('sel'); if (wasSel) c.classList.remove('sel');
+      if (!c.matches(':hover')) MC.dims[id] = { w: c.offsetWidth || 150, h: c.offsetHeight || 60 };
+      if (wasSel) c.classList.add('sel');
+    });
+  }
+
+  function mcSchedule() {
+    if (!MC.ready || MC.timer) return;
+    MC.timer = setTimeout(() => { MC.timer = 0; mcUpdate(); }, 200);
+  }
+
+  function mcLabelPos(id) {
+    const w = LW.world;
+    if (!S.hasWorld || !w) return null;
+    try {
+      if (typeof w.labelScreenPos === 'function') {
+        const lp = w.labelScreenPos(id);
+        // tall buildings (the ledger tower) put their label under the KPI row; anchor to the building body instead
+        const k = $('#kpis'), kb = k ? k.getBoundingClientRect().bottom : 0;
+        if (lp && lp.visible && lp.y < kb + 8 && typeof w.screenPos === 'function') {
+          const bp = w.screenPos(id);
+          if (bp && bp.visible) return { x: bp.x, y: Math.max(bp.y, kb + 8), visible: true };
+        }
+        return lp;
+      }
+      if (typeof w.screenPos === 'function') {
+        const p = w.screenPos(id);
+        return p ? { x: p.x, y: p.y - 70, visible: p.visible } : null;
+      }
+    } catch (e) { /* noop */ }
+    return null;
+  }
+
+  function mcPanelRects() {
+    const out = [];
+    MC_PANELS.forEach((sel) => {
+      $$(sel).forEach((n) => {
+        const r = n.getBoundingClientRect();
+        if (r.width > 4 && r.height > 4 && getComputedStyle(n).display !== 'none') out.push(r);
+      });
+    });
+    MC.panels = out;
+  }
+
+  function mcTick() {
+    const now = performance.now();
+    if (now - MC.last < 6) return;
+    MC.last = now;
+    if (!MC.ready || !MC.on || isMobile()) return;
+    if (MC.frame++ % 15 === 0) mcPanelRects();
+    const vw = innerWidth, vh = innerHeight, placed = [];
+    BIDS.forEach((id) => {
+      const c = MC.cards[id]; if (!c) return;
+      const p = mcLabelPos(id), d = MC.dims[id] || { w: 168, h: 96 };
+      let show = !!(p && p.visible && isFinite(p.x) && isFinite(p.y));
+      if (show) {
+        let x = p.x - d.w / 2, y = p.y + 4;
+        if (x + d.w < 0 || x > vw || y + d.h < 0 || y > vh) show = false;
+        else {
+          x = Math.max(4, Math.min(vw - d.w - 4, x));
+          // nudge below any earlier card we would overlap
+          for (let pass = 0; pass < 5; pass++) {
+            let moved = false;
+            for (let i = 0; i < placed.length; i++) {
+              const q = placed[i];
+              if (x < q.x + q.w && x + d.w > q.x && y < q.y + q.h && y + d.h > q.y) { y = q.y + q.h + 4; moved = true; }
+            }
+            if (!moved) break;
+          }
+          // hide when mostly covered by a main panel (hysteresis avoids flicker)
+          let cover = 0;
+          for (let i = 0; i < MC.panels.length; i++) {
+            const r = MC.panels[i];
+            const ox = Math.min(x + d.w, r.right) - Math.max(x, r.left), oy = Math.min(y + d.h, r.bottom) - Math.max(y, r.top);
+            if (ox > 0 && oy > 0) cover += (ox * oy) / (d.w * d.h);
+          }
+          MC.hid[id] = cover > 0.3 ? true : cover < 0.15 ? false : !!MC.hid[id];
+          if (MC.hid[id] || y > vh - 8) show = false;
+          else {
+            placed.push({ x: x, y: y, w: d.w, h: d.h });
+            const tx = Math.round(x * 2) / 2, ty = Math.round(y * 2) / 2;
+            if (c._tx !== tx || c._ty !== ty) { c._tx = tx; c._ty = ty; c.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0)'; }
+          }
+        }
+      }
+      if (c._off !== !show) { c._off = !show; c.classList.toggle('off', !show); }
+    });
+  }
+
+  function mcSetOn(on) {
+    MC.on = !!on;
+    if (MC.el) MC.el.hidden = !MC.on;
+    const b = $('#mapctl [data-act="cards"]');
+    if (b) b.setAttribute('aria-pressed', String(MC.on));
+    if (MC.on) { MC.last = 0; mcUpdate(); mcTick(); }
+  }
+
+  function mcInit() {
+    // toggle button in the map controls (no persistence on purpose)
+    const ctl = $('#mapctl');
+    if (ctl && !$('[data-act="cards"]', ctl)) {
+      const hr = doc.createElement('hr'); hr.className = 'mc-only-desktop';
+      const b = doc.createElement('button');
+      b.type = 'button'; b.className = 'mc-toggle mc-only-desktop'; b.dataset.act = 'cards'; b.dataset.demo = 'map-cards-toggle';
+      b.setAttribute('aria-pressed', 'true');
+      b.dataset.i18nAria = 'map.cards'; b.dataset.i18nTitle = 'map.cards';
+      b.innerHTML = icon('cards', 18);
+      ctl.appendChild(hr); ctl.appendChild(b);
+      applyI18n(ctl);
+    }
+    if (!S.hasWorld) return;
+    mcBuild();
+    mcUpdate();
+    const w = LW.world;
+    if (w && typeof w.onFrame === 'function') { try { w.onFrame(mcTick); } catch (e) { console.warn('[ui] world.onFrame failed', e); } }
+    // fallback / safety net: if the world does not tick us, a rAF loop does (mcTick de-duplicates within a frame)
+    const loop = () => { requestAnimationFrame(loop); if (performance.now() - MC.last > 40) mcTick(); };
+    requestAnimationFrame(loop);
+    addEventListener('resize', () => { MC.frame = 0; MC.last = 0; setTimeout(mcUpdate, 50); });
+  }
+
   /* ================================================================== Event handling */
   function onMetrics(m) {
     S.metrics = m;
@@ -1101,6 +1325,7 @@
     if (S.selected) renderInspector();
     if (S.tab !== 'journal') renderTable();
     renderFallback();
+    mcSchedule();
   }
 
   function onPosted(p) {
@@ -1120,6 +1345,7 @@
     if (S.tab === 'journal') renderTable();
     setTimeout(() => { if (S.flashId === entry.id) S.flashId = null; }, 2000);
     if (S.selected) renderInspector();
+    mcSchedule();
     if (p.auto) {
       const now = Date.now();
       if (now - S.lastAutoToast > 20000) {
@@ -1233,6 +1459,7 @@
     renderTeam(true);
     renderFeed();
     renderFallback();
+    mcUpdate();
     syncSpeedUi();
     tickClock();
     if ($('#searchInput').value) renderSearch();
@@ -1240,6 +1467,24 @@
   }
 
   /* ======================================================================== boot */
+  // Screen area covered by the floating panels, so the world can centre its view in what is left.
+  function syncWorldInsets() {
+    if (!S.hasWorld || !LW.world || typeof LW.world.setInsets !== 'function') return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (vw < 900) { LW.world.setInsets(null); return; }
+    const rect = (sel) => { const el = $(sel); if (!el || el.hidden) return null; const r = el.getBoundingClientRect(); return r.width && r.height ? r : null; };
+    const kpi = rect('#kpis'), ctl = rect('#mapctl'), team = rect('#teamPanel') || rect('#inspector');
+    const close = rect('#closePanel'), table = rect('#tablePanel');
+    const bottomTop = Math.min(close ? close.top : vh, table ? table.top : vh);
+    LW.world.setInsets({
+      // extra margin keeps building labels and their cards clear of the panel edges
+      top: (kpi ? kpi.bottom : 0) + 40,
+      left: ctl ? ctl.right : 0,
+      right: team ? vw - team.left : 0,
+      bottom: vh - bottomTop + 20
+    });
+  }
+
   function boot() {
     hydrate(doc);
     if (!LW.engine) {
@@ -1273,6 +1518,12 @@
     buildKpis();
     S.metrics = getMetrics();
     updateKpis(S.metrics);
+    if (ok) {
+      // centre the 3D campus in the area the panels leave free, then frame it
+      requestAnimationFrame(() => { syncWorldInsets(); W('resetView'); });
+      let rT = 0;
+      window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(syncWorldInsets, 150); });
+    }
     updateXp(S.metrics, true);
     renderInspector();
     renderClose();
@@ -1280,6 +1531,7 @@
     renderTeam(true);
     renderFeed();
     renderFallback();
+    mcInit();
     tickClock();
     setInterval(tickClock, 1000);
     if (!ok) setTimeout(() => toast('warn', t('toast.noWebglTitle'), t('toast.noWebglBody'), 5000), 600);
@@ -1291,7 +1543,8 @@
     E.on('close', () => { renderClose(); if (S.selected === 'reporting') renderInspector(); });
     E.on('xp', (x) => { if (x && x.delta) pulseXp(x.delta); });
     E.on('activity', onActivity);
-    E.on('team', () => { renderTeam(); });
+    E.on('team', () => { renderTeam(); mcSchedule(); });
+    E.on('close', () => mcSchedule());
     // language: single source of truth is LW.i18n
     I.on(applyLang);
 
@@ -1306,6 +1559,7 @@
       else if (a === 'rotL') W('rotate', Math.PI / 8);
       else if (a === 'rotR') W('rotate', -Math.PI / 8);
       else if (a === 'home') W('resetView');
+      else if (a === 'cards') { mcSetOn(!MC.on); return; }
       if (!S.hasWorld) toast('warn', t('toast.noWebglTitle'), t('toast.mapNeedsWebgl'), 2500);
     });
     $('#companyPill').addEventListener('click', () => toast('info', t('co.name'), t('co.only'), 3600));

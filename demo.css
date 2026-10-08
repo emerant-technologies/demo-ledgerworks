@@ -211,3 +211,16 @@
 #lw-demo-keys { border: 1px solid #3a3f4a; box-shadow: 0 4px 12px rgba(0, 0, 0, .2); }
 #lw-demo-keys i { animation: none; }
 #lw-demo-bar .ld-dot { background: #b4534b; animation: none; }
+
+/* ---------- tour bar + chip at the bottom (desktop); caption sits just above ---------- */
+@media (min-width: 861px) {
+  #lw-demo-bar { top: auto; bottom: 12px; }
+  #lw-demo-chip { top: auto !important; bottom: 12px; }
+  #lw-demo-cap { bottom: 66px; }
+}
+/* calmer middle-ground colours for the bar */
+#lw-demo-bar .ld-prog i { background: #2f5fb3; }
+#lw-demo-bar button[data-act="pause"] { background: #2f5fb3; }
+#lw-demo-bar button[data-act="pause"]:hover { background: #284f96; }
+#lw-demo-bar.paused button[data-act="pause"] { background: #d9a43a; color: #1a1200; }
+#lw-demo-bar .ld-badge { color: #2f5fb3; }

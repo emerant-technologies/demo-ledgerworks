@@ -311,8 +311,8 @@
         var r = m.getBoundingClientRect();
         if (r.width > 0) {
           var h = els.cap.offsetHeight || 84;
-          if (r.bottom + 14 + h <= window.innerHeight - 6) top = r.bottom + 14;
-          else if (r.top - h - 14 >= 104) top = r.top - h - 14;
+          if (r.bottom + 14 + h <= window.innerHeight - (window.innerWidth > 860 ? 64 : 6)) top = r.bottom + 14;
+          else if (r.top - h - 14 >= 76) top = r.top - h - 14;
         }
       }
     } catch (e) { /* ignore */ }

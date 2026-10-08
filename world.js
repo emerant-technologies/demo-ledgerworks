@@ -32,16 +32,16 @@
     return '#' + c.getHexString();
   }
   function muteMap(o, k) { var r = {}; Object.keys(o).forEach(function (key) { r[key] = muteHex(o[key], k); }); return r; }
-  var GLOBAL_MUTE = 0.3;   // applied to every lit material colour in mat()
+  var GLOBAL_MUTE = 0.1;   // applied to every lit material colour in mat()
   var ACC = muteMap({
     sales: '#2f6bff', procure: '#8b5cf6', warehouse: '#f59e0b', bank: '#10b981', payroll: '#ec4899',
     ledger: '#0ea5e9', reporting: '#6366f1', customers: '#2f6bff', vendors: '#8b5cf6'
-  }, 0.25);
+  }, 0.12);
   var KIND = muteMap({
     invoice: '#2f6bff', bill: '#8b5cf6', cash: '#10b981', goods: '#f59e0b', payroll: '#ec4899',
     entry: '#22d3ee', report: '#6366f1'
-  }, 0.25);
-  var STATUS_COL = { ok: '#a3acb9', warn: '#d9a03f', alert: '#cf5a52' };
+  }, 0.12);
+  var STATUS_COL = { ok: '#4fb585', warn: '#e6a23a', alert: '#d9534f' };
 
   // world position, footprint [w,d], door node, ground pad rect
   var DEF = {
@@ -243,7 +243,7 @@
     return s;
   }
   function pillCanvas(text, o) {
-    var s = 2, fs = (o.fs || 24) * s, pad = (o.pad || 14) * s, dotR = o.dot ? (o.dotR || 7) * s : 0;
+    var s = 3, fs = (o.fs || 24) * s, pad = (o.pad || 14) * s, dotR = o.dot ? (o.dotR || 7) * s : 0;
     var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
     var font = '700 ' + fs + 'px ' + FONT;
     ctx.font = font;
@@ -251,16 +251,17 @@
     var h = Math.ceil(fs + pad * 1.05), w = tw + pad * 2 + (dotR ? dotR * 2 + 8 * s : 0), sh = 7 * s;
     cv.width = Math.ceil(w + sh * 2); cv.height = Math.ceil(h + sh * 2);
     ctx.font = font; ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(30,38,56,.20)'; ctx.shadowBlur = sh * 0.7; ctx.shadowOffsetY = 1.5 * s;
-    ctx.fillStyle = o.bg || 'rgba(255,255,255,.98)';
+    ctx.shadowColor = 'rgba(20,28,46,.26)'; ctx.shadowBlur = sh * 0.6; ctx.shadowOffsetY = 1.5 * s;
+    ctx.fillStyle = o.bg || '#ffffff';
     rr(ctx, sh, sh, w, h, h / 2); ctx.fill();
     ctx.shadowColor = 'transparent';
-    var bd = o.border || (o.bg ? null : 'rgba(70,82,104,.28)');
-    if (bd) { ctx.strokeStyle = bd; ctx.lineWidth = 1.6 * s; rr(ctx, sh, sh, w, h, h / 2); ctx.stroke(); }
+    var bd = o.border || (o.bg ? null : 'rgba(40,52,76,.55)');
+    if (bd) { ctx.strokeStyle = bd; ctx.lineWidth = 1.4 * s; rr(ctx, sh, sh, w, h, h / 2); ctx.stroke(); }
     var x = sh + pad;
     if (dotR) { ctx.fillStyle = o.dot; ctx.beginPath(); ctx.arc(x + dotR, sh + h / 2, dotR, 0, 7); ctx.fill(); x += dotR * 2 + 8 * s; }
-    ctx.fillStyle = o.fg || '#222c3f';
+    ctx.fillStyle = o.fg || '#0f1729';
     ctx.fillText(text, x, sh + h / 2 + s);
+    cv.pad = sh;
     return cv;
   }
   // returns sprite with .userData.setText(text)
@@ -274,7 +275,7 @@
       var tex = new T.CanvasTexture(cv); tex.encoding = T.sRGBEncoding; tex.minFilter = T.LinearFilter; tex.generateMipmaps = false;
       if (spr.material.map) spr.material.map.dispose();
       spr.material.map = tex; spr.material.needsUpdate = true;
-      spr.userData.bw = H * cv.width / cv.height; spr.userData.bh = H;
+      spr.userData.bw = H * cv.width / cv.height; spr.userData.bh = H; spr.userData.padFrac = cv.pad / cv.height;
       spr.scale.set(spr.userData.bw, H, 1);
     }
     spr.userData.setText = set; set(text);
@@ -958,11 +959,11 @@
     var sh = new T.Mesh(new T.PlaneGeometry(sw * 1.35, sd * 1.5), new T.MeshBasicMaterial({ map: sTex, transparent: true, depthWrite: false, toneMapped: false }));
     sh.rotation.x = -Math.PI / 2; sh.position.set(cx, -3.6, cz + 3); scene.add(sh);
     // slab
-    var slab = new T.Mesh(boxGeo(sw, 3, sd), mat('#c8c5bf')); slab.position.set(cx, -1.5 - 0.0, cz); slab.receiveShadow = true; scene.add(slab);
-    var top = new T.Mesh(boxGeo(sw - 0.8, 0.12, sd - 0.8), mat('#ebe9e4')); top.position.set(cx, -0.06 + 0.0, cz); top.receiveShadow = true; scene.add(top);
+    var slab = new T.Mesh(boxGeo(sw, 3, sd), mat('#c9c5bd')); slab.position.set(cx, -1.5 - 0.0, cz); slab.receiveShadow = true; scene.add(slab);
+    var top = new T.Mesh(boxGeo(sw - 0.8, 0.12, sd - 0.8), mat('#e5e1d9')); top.position.set(cx, -0.06 + 0.0, cz); top.receiveShadow = true; scene.add(top);
     slab.position.y = -1.56;
     // lawns (outside the loop)
-    var lawn = mat('#dce5d4');
+    var lawn = mat('#c6e0b4');
     function lawnRect(x0, x1, z0, z1) {
       var m = new T.Mesh(boxGeo(x1 - x0, 0.06, z1 - z0), lawn); m.position.set((x0 + x1) / 2, 0.03, (z0 + z1) / 2); m.receiveShadow = true; scene.add(m);
     }
@@ -974,9 +975,9 @@
   }
 
   function buildRoads(scene) {
-    var roadM = mat('#8d8b87'), roadM2 = mat('#86847f');
+    var roadM = mat('#6d6e73'), roadM2 = mat('#66676c');
     var grp = new T.Group();
-    var curb = mat('#e6e3de');
+    var curb = mat('#ecebe6');
     ROADS.forEach(function (r) {
       var horiz = r[1] === r[3];
       var x0 = Math.min(r[0], r[2]), x1 = Math.max(r[0], r[2]), z0 = Math.min(r[1], r[3]), z1 = Math.max(r[1], r[3]);
@@ -1015,7 +1016,7 @@
         if (!skip) dashes.push([x, z, horiz ? 0 : Math.PI / 2]);
       }
     });
-    var dm = inst(boxGeo(1.7, 0.02, 0.2), mat('#dedbd5'), dashes.length, false);
+    var dm = inst(boxGeo(1.7, 0.02, 0.24), mat('#f8f6ee'), dashes.length, false);
     dashes.forEach(function (d, i) { dm.setMatrixAt(i, compose(d[0], ROAD_Y + 0.012, d[1], d[2])); });
     scene.add(dm);
     // crosswalks
@@ -1027,7 +1028,7 @@
     zebra(-LX, 6, true); zebra(LX, 6, true);
     zebra(-50, AZ, false); zebra(50, AZ, false);
     // horizontal-stripe crosswalks on avenues (stripes run along road direction)
-    var zm = inst(boxGeo(2.2, 0.02, 0.36), mat('#dedbd5'), zs.length, false);
+    var zm = inst(boxGeo(2.2, 0.02, 0.4), mat('#f8f6ee'), zs.length, false);
     zs.forEach(function (d, i) { zm.setMatrixAt(i, compose(d[0], ROAD_Y + 0.012, d[1], d[2])); });
     scene.add(zm);
   }
@@ -1057,7 +1058,7 @@
       var x = lerp(SLAB.x0 + 3, SLAB.x1 - 3, rand()), z = lerp(SLAB.z0 + 3, SLAB.z1 - 3, rand());
       if (okTree(x, z)) pts.push([x, z, rand(), rand() > 0.42]);
     }
-    var greens = ['#5cc17a', '#4fb36a', '#7dd08c', '#3fa763', '#6fcf8f'].map(function (h) { return muteHex(h, 0.45); });
+    var greens = ['#5cc17a', '#4fb36a', '#7dd08c', '#3fa763', '#6fcf8f'].map(function (h) { return muteHex(h, 0.15); });
     var trunkM = mat('#b98b5e', { std: true, r: 0.9 }), leafM = mat('#ffffff', { std: true, r: 0.85, flat: true });
     var trunkG = new T.CylinderGeometry(0.22, 0.3, 1.5, 6); trunkG.translate(0, 0.75, 0);
     var pineG1 = new T.ConeGeometry(1.7, 2.8, 7); pineG1.translate(0, 2.4, 0);
@@ -1218,9 +1219,12 @@
       model.position.y = ROAD_Y; if (v.delay > 0) model.visible = false; scene.add(model); S.ambient.push(v);
     }
     // v2: ~55% of v1 speed, staggered start and slow speed waves so different parts of the map move at different times
-    // calm: just two slow background vehicles, constant speed
-    vehicleOnLoop(makeVan('#e9e9e6', '#f1f0ec', { stripe: '#7f93b8' }), ['NW', 'NE', 'CE', 'CW'], false, 2.9, 1.0, 0.1, 0.5, 46);
-    vehicleOnLoop(makeFlatbed('#8d9bb0', false), ['AP', 'AQ', 'CQ', 'CP'], false, 2.6, 1.0, 0.3, 11, 53);
+    // calm: a few slow background vehicles, constant speed
+    var vm = function (h) { return muteHex(h, 0.12); };
+    vehicleOnLoop(makeVan('#ffffff', '#f4f6fa', { stripe: vm('#2f6bff') }), ['NW', 'NE', 'CE', 'CW'], false, 2.9, 1.0, 0.1, 0.5, 46);
+    vehicleOnLoop(makeCar(vm('#fbbf24')), ['NW', 'NE', 'CE', 'CW'], true, 3.2, 1.0, 0.55, 5.5, 37);
+    vehicleOnLoop(makeFlatbed(vm('#3b82f6'), false), ['AP', 'AQ', 'CQ', 'CP'], false, 2.6, 1.0, 0.3, 11, 53);
+    vehicleOnLoop(makeVan(vm('#34d399'), '#f4f6fb', { stripe: vm('#10b981') }), ['AP', 'AQ', 'CQ', 'CP'], true, 2.8, 1.0, 0.8, 17, 43);
   }
 
   function updateAmbient(dt) {
@@ -1417,19 +1421,11 @@
     var c = C(STATUS_COL[st]);
     b.bulb.material.color.copy(c);
   }
+  // Badge pills are no longer rendered in the 3D scene (the UI draws HTML mini-dashboards instead); text is only stored.
   function setBadge(id, text) {
     var b = S.buildings[id] || S.endpoints[id]; if (!b) return;
-    if (text == null || text === '') {
-      if (b.badge) { disposeSprite(b.badge); b.badge = null; }
-      return;
-    }
-    text = String(text);
-    if (b.badgeText === text && b.badge) return;
-    b.badgeText = text;
-    if (!b.badge) {
-      b.badge = pillSprite(text, { bg: mixHex(b.accent, '#2b3446', 0.4), fg: '#ffffff', fs: 24, pad: 15 }, 1.9);
-      b.badge.position.set(0, b.badgeY, 0); b.group.add(b.badge);
-    } else b.badge.userData.setText(text);
+    if (b.badge) { disposeSprite(b.badge); b.badge = null; }
+    b.badgeText = (text == null || text === '') ? '' : String(text);
   }
 
   /* =====================================================================
@@ -1614,12 +1610,12 @@
     var parts = makePerson(m);
     m.parts = parts; m.root = parts.root;
     m.first = firstName(m.name);
-    m.pill = pillSprite(m.first, { dot: muteHex(color, 0.25), fs: 24, pad: 13 }, 2.3);
+    m.pill = pillSprite(m.first, { dot: muteHex(color, 0.12), fs: 24, pad: 13 }, 2.3);
     m.root.add(m.pill);
-    m.doc = docSprite(muteHex(color, 0.25)); m.doc.visible = false; m.root.add(m.doc);
+    m.doc = docSprite(muteHex(color, 0.12)); m.doc.visible = false; m.root.add(m.doc);
     // highlight rings
     m.rings = [0].map(function () {
-      var r = new T.Mesh(_ringGeo2(), new T.MeshBasicMaterial({ color: C(muteHex(color, 0.25)), transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: T.DoubleSide }));
+      var r = new T.Mesh(_ringGeo2(), new T.MeshBasicMaterial({ color: C(muteHex(color, 0.12)), transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: T.DoubleSide }));
       r.renderOrder = 6; r.visible = false; r.position.y = 0.05; m.root.add(r); return r;
     });
     S.scene.add(m.root);
@@ -1638,7 +1634,7 @@
     if (!text) { clearTask(m); return; }
     if (m.taskSpr && m.taskText === text) return;
     clearTask(m);
-    m.taskSpr = pillSprite(text, { dot: muteHex(m.color, 0.25), fs: 22, pad: 13, border: 'rgba(70,82,104,.38)' }, 2.0);
+    m.taskSpr = pillSprite(text, { dot: muteHex(m.color, 0.12), fs: 22, pad: 13, border: 'rgba(70,82,104,.38)' }, 2.0);
     m.taskText = text; m.root.add(m.taskSpr);
   }
   function removeMember(m) {
@@ -1860,13 +1856,44 @@
     return { x: rc.left + rc.width / 2, y: rc.top + rc.height / 2, visible: false };
   }
 
+  // bottom-centre of a building's name pill, in CSS viewport pixels
+  function labelScreenPos(id) {
+    var b = S.buildings[id] || S.endpoints[id];
+    if (!S.ready || !b || !b.label) {
+      var rc = S.dom ? S.dom.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+      return { x: rc.left + rc.width / 2, y: rc.top + rc.height / 2, visible: false };
+    }
+    S.camera.updateMatrixWorld();
+    var sp = b.label, u = sp.userData;
+    sp.updateMatrixWorld(true);
+    var wp = new T.Vector3().setFromMatrixPosition(sp.matrixWorld);
+    var up = new T.Vector3().setFromMatrixColumn(S.camera.matrixWorld, 1).normalize();
+    var sy = sp.scale.y, drop = sy * (0.5 - (u.padFrac || 0)); // pill body ends padFrac above the canvas edge
+    wp.addScaledVector(up, -drop);
+    return toScreen(wp);
+  }
+  var frameCbs = [];
+  function onFrame(fn) {
+    if (typeof fn !== 'function') return function () {};
+    frameCbs.push(fn);
+    return function () { var i = frameCbs.indexOf(fn); if (i >= 0) frameCbs.splice(i, 1); };
+  }
+
   /* =====================================================================
    * Camera
    * ===================================================================== */
   var DEF_AZ = 0.5, DEF_POLAR = 0.98, TARGET0 = [0, 5, 4];
   function defaultDist() {
     var asp = S.camera ? S.camera.aspect : 1.6;
-    return clamp(255 / asp, 125, 300);
+    var d = clamp(255 / asp, 125, 300);
+    // pull back a little when panels cover part of the view so the whole campus fits
+    var I = S.insets, c = S.container;
+    if (I && c) {
+      var w = c.clientWidth || 1, h = c.clientHeight || 1;
+      var free = Math.min((w - I.left - I.right) / w, (h - I.top - I.bottom) / h);
+      d *= clamp(1 / Math.max(free, 0.3), 1, S.insetZoomMax || 1.85);
+    }
+    return d;
   }
   function getSph() {
     var off = new T.Vector3().subVectors(S.camera.position, S.controls ? S.controls.target : S.target);
@@ -1930,7 +1957,29 @@
     var c = S.container, w = c.clientWidth || window.innerWidth, h = c.clientHeight || window.innerHeight;
     if (w < 2 || h < 2) return;
     S.renderer.setSize(w, h, true);
-    S.camera.aspect = w / h; S.camera.updateProjectionMatrix();
+    S.camera.aspect = w / h;
+    applyInsets(w, h);
+    S.camera.updateProjectionMatrix();
+  }
+
+  // Shift the projection centre into the part of the screen not covered by UI panels.
+  // insets are CSS pixels covered on each side; the 3D view itself still fills the canvas.
+  function applyInsets(w, h) {
+    var I = S.insets;
+    if (!I) { if (S.camera.view) S.camera.clearViewOffset(); return; }
+    var cx = I.left + Math.max(40, w - I.left - I.right) / 2;
+    var cy = I.top + Math.max(40, h - I.top - I.bottom) / 2;
+    S.camera.setViewOffset(w, h, w / 2 - cx, h / 2 - cy, w, h);
+  }
+  function setInsets(ins) {
+    S.insets = ins ? {
+      top: Math.max(0, +ins.top || 0), right: Math.max(0, +ins.right || 0),
+      bottom: Math.max(0, +ins.bottom || 0), left: Math.max(0, +ins.left || 0)
+    } : null;
+    if (!S.renderer) return;
+    var c = S.container, w = c.clientWidth || window.innerWidth, h = c.clientHeight || window.innerHeight;
+    applyInsets(w, h);
+    S.camera.updateProjectionMatrix();
   }
 
   function frame() {
@@ -1971,6 +2020,7 @@
       if (u.bw) sp.scale.set(u.bw * f, u.bh * f, 1);
     }
     S.renderer.render(S.scene, S.camera);
+    for (var q = 0; q < frameCbs.length; q++) { try { frameCbs[q](); } catch (e) { console.error('[LW.world] onFrame error', e); } }
   }
 
   function init(containerEl) {
@@ -2007,8 +2057,8 @@
       renderer.setSize(w, h, true);
 
       // lights
-      scene.add(new T.HemisphereLight(0xffffff, 0xd2d1ce, 0.85));
-      var sun = new T.DirectionalLight(0xfff6ea, 0.78);
+      scene.add(new T.HemisphereLight(0xffffff, 0xcfcdc8, 0.62));
+      var sun = new T.DirectionalLight(0xfff4e4, 1.0);
       sun.position.set(-52, 90, 36); sun.target.position.set(0, 0, 0);
       sun.castShadow = true;
       var ms = Math.min(4096, renderer.capabilities.maxTextureSize || 2048);
@@ -2074,6 +2124,7 @@
 
   LW.world = {
     init: init,
+    setInsets: setInsets,
     on: function (ev, fn) { (handlers[ev] = handlers[ev] || []).push(fn); },
     off: function (ev, fn) { handlers[ev] = (handlers[ev] || []).filter(function (f) { return f !== fn; }); },
     flow: flow,
@@ -2090,6 +2141,8 @@
     setTeam: setTeam,
     walk: walk,
     screenPos: screenPos,
+    labelScreenPos: labelScreenPos,
+    onFrame: onFrame,
     highlightMember: highlightMember,
     getMemberIds: function () { return Object.keys(S.team); },
     // extras (not in the contract)

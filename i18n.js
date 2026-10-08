@@ -95,6 +95,42 @@
   def('map.rotL', 'Rotate left', 'Завърти наляво');
   def('map.rotR', 'Rotate right', 'Завърти надясно');
   def('map.home', 'Reset view', 'Начален изглед');
+  def('map.cards', 'Show/hide building dashboards', 'Показване/скриване на таблата към сградите');
+
+  /* ---- map mini-dashboards ---- */
+  def('mc.name.sales', 'Sales', 'Продажби');
+  def('mc.name.procure', 'Procurement', 'Доставки');
+  def('mc.name.warehouse', 'Inventory', 'Запаси');
+  def('mc.name.bank', 'Treasury', 'Парични средства');
+  def('mc.name.payroll', 'Payroll', 'Заплати (ТРЗ)');
+  def('mc.name.ledger', 'General Ledger', 'Главна книга');
+  def('mc.name.reporting', 'Reporting', 'Отчетност');
+  def('mc.revMtd', 'Revenue MTD', 'Приходи (месец)');
+  def('mc.openInv', 'Open invoices', 'Отворени фактури');
+  def('mc.dso', 'DSO', 'Събиране (DSO)');
+  def('mc.ap', 'Payables', 'Задължения');
+  def('mc.due7', 'Bills due ≤7d', 'Падеж до 7 дни');
+  def('mc.dpo', 'DPO', 'Плащане (DPO)');
+  def('mc.inv', 'Inventory', 'Запаси');
+  def('mc.cogs', 'COGS MTD', 'Себестойност');
+  def('mc.gm', 'Gross margin', 'Брутен марж');
+  def('mc.cash', 'Cash', 'Налични пари');
+  def('mc.cr', 'Current ratio', 'Ликвидност');
+  def('mc.receipts', 'Receipts today', 'Входящи днес');
+  def('mc.wc', 'Working capital', 'Оборотен капитал');
+  def('mc.wages', 'Wages MTD', 'Заплати (месец)');
+  def('mc.accrued', 'Accrued wages', 'Начисл. заплати');
+  def('mc.payRev', 'Payroll / revenue', 'Заплати / приходи');
+  def('mc.posted', 'Entries posted', 'Записи');
+  def('mc.tb', 'Trial balance', 'Оборотна вед.');
+  def('mc.lastJe', 'Last entry', 'Последен запис');
+  def('mc.close', 'Close progress', 'Приключване');
+  def('mc.ni', 'Net income MTD', 'Нетна печалба');
+  def('mc.rev', 'Revenue MTD', 'Приходи (месец)');
+  def('mc.balanced', '✓ Balanced', '✓ Баланс');
+  def('mc.unbalanced', '✗ Off', '✗ Разлика');
+  def('mc.idle', 'Idle', 'Свободен');
+  def('mc.open', 'Open {b}', 'Отвори: {b}');
 
   /* ---- mobile sheet ---- */
   def('sheet.aria', 'Panels', 'Панели');
